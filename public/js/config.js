@@ -73,7 +73,7 @@ export const CONFIG = {
     modo_padrao: 'moto',
     min_paradas: 8,
     max_paradas: 12,
-    max_candidatos: 15,
+    max_candidatos: 24, // candidatos levados ao roteirizador (o dia tem no máximo max_paradas)
     espera_max_min: 40, // espera aceitável até a janela abrir
     folga_retorno_min: 30, // retorno com hora: chegar até 30 min depois do combinado
   },

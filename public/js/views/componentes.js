@@ -69,3 +69,13 @@ export function cardPonto(store, p, opts = {}) {
     </div>
   </div>`;
 }
+
+/** Linha compacta para os blocos fixos do Hoje: nome, um dado-chave e uma ação. */
+export function linhaCompacta(store, p, { s = '', acao = '' } = {}) {
+  const sit = store.situacao(p.id);
+  return `<div class="linha-c" data-ponto="${esc(p.id)}">
+    <span class="selo-estado e-${esc(sit.estado)}" style="padding:2px" title="${esc(sit.estado)}"><i aria-hidden="true">${esc({ lead: 'L', cadastrado_sem_compra: 'O', ativacao: 'A', recorrente: 'R', ativacao_vencida: 'V', churn: 'C' }[sit.estado])}</i></span>
+    <a class="corpo-c" href="#/ponto/${esc(p.id)}"><span class="t">${esc(nomeDe(p))}</span><span class="s">${s}</span></a>
+    ${acao}
+  </div>`;
+}

@@ -54,8 +54,9 @@ export function cicloReposicao(store, p) {
  * Avalia um ponto para hoje. `chegada` (Date) é opcional: sem ela, a janela do decisor conta se existir hoje.
  * Devolve { valor, chance, esperados, motivos[], bloqueio, retornoHoje, recompraVencendo }.
  */
-export function avaliarPrioridade(store, p, { chegada = null, sit = store.situacao(p.id), cfg = CONFIG } = {}) {
-  const hoje = store.agora();
+export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = store.situacao(p.id), cfg = CONFIG } = {}) {
+  const agora = store.agora();
+  const hoje = dia || chegada || agora; // o dia avaliado (o plano pode ser de amanhã)
   const c = cfg.chance;
   const valor = pontosValor(p);
   let chance = c.base[sit.estado] ?? 0.1;
@@ -68,7 +69,14 @@ export function avaliarPrioridade(store, p, { chegada = null, sit = store.situac
   if (!abreNoDia(p, hoje.getDay())) bloqueio = 'fechado hoje';
   if (chegada && !bloqueio) {
     const m = minutosDe(chegada);
-    if (!faixasFuncionamento(p).some(([a, b]) => m >= a && m < b)) bloqueio = `fechado às ${hora(chegada.toISOString())}`;
+    // horário registrado é regra; o padrão do tipo é palpite e perde para o que o vendedor combinou
+    // (retorno marcado) ou registrou (janela do decisor)
+    const registrado = !!p.horario_funcionamento?.faixas?.length;
+    const combinado = p.status_dia === 'retornar' && p.retorno_sugerido && Math.abs(new Date(p.retorno_sugerido) - chegada) <= 45 * 60000;
+    const naJanela = janelasDecisor(p, chegada).some(([a, b]) => m >= a && m < b);
+    if (!faixasFuncionamento(p).some(([a, b]) => m >= a && m < b) && (registrado || (!combinado && !naJanela))) {
+      bloqueio = `fechado às ${hora(chegada.toISOString())}`;
+    }
   }
 
   // ---- sobe ----
@@ -88,7 +96,7 @@ export function avaliarPrioridade(store, p, { chegada = null, sit = store.situac
   }
   if (sit.estado === 'ativacao') {
     const ciclo = cicloReposicao(store, p);
-    const desde = sit.ultima_compra ? (hoje - new Date(sit.ultima_compra)) / DIA_MS : 0;
+    const desde = sit.ultima_compra ? (agora - new Date(sit.ultima_compra)) / DIA_MS : 0;
     if (sit.prazo.dias_restantes <= c.dias_recompra_alerta) {
       recompraVencendo = true;
       chance *= c.sobe.recompra_vencendo;
@@ -111,7 +119,7 @@ export function avaliarPrioridade(store, p, { chegada = null, sit = store.situac
     }
   }
   if (sit.estado === 'cadastrado_sem_compra' && p.cadastro_em) {
-    motivos.push(`cadastrado há ${Math.floor((hoje - new Date(p.cadastro_em)) / DIA_MS)} dias, sem 1ª compra`);
+    motivos.push(`cadastrado há ${Math.floor((agora - new Date(p.cadastro_em)) / DIA_MS)} dias, sem 1ª compra`);
   }
 
   // ---- cai ----
@@ -121,7 +129,7 @@ export function avaliarPrioridade(store, p, { chegada = null, sit = store.situac
   }
   const ult = store.visitasDo(p.id)[0];
   if (ult?.checkin?.em) {
-    const dias = (hoje - new Date(ult.checkin.em)) / DIA_MS;
+    const dias = (agora - new Date(ult.checkin.em)) / DIA_MS;
     if (ult.nucleo?.resultado === 'recusou' && dias < c.dias_recusa) {
       chance *= c.cai.recusou_recente;
       motivos.push(`recusou há ${Math.max(1, Math.round(dias))} dias`);

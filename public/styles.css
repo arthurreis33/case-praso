@@ -320,3 +320,13 @@ dialog::backdrop { background: rgba(0,0,0,.45); }
   .kpis { grid-template-columns: repeat(4, 1fr); }
 }
 body.sobreposicao #toast { bottom: calc(var(--barra-h) + 14px + env(safe-area-inset-bottom)); }
+
+/* Linha compacta (blocos fixos do Hoje) */
+.linha-c { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--linha); min-height: 52px; }
+.linha-c:last-child { border-bottom: 0; }
+.linha-c a.corpo-c { flex: 1; min-width: 0; color: var(--texto); text-decoration: none; padding: 6px 0; }
+.linha-c .t { font-weight: 800; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linha-c .s { font-size: .85rem; color: var(--sutil); display: block; }
+.linha-c .acao-c { flex: 0 0 auto; min-height: 44px; min-width: 64px; border: 2px solid var(--texto); border-radius: var(--raio); background: var(--fundo); font: inherit; font-weight: 800; color: var(--primaria); padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.linha-c .ok-c { font-size: .8rem; color: var(--ok); font-weight: 800; flex: 0 0 auto; }
+.bloco-topo .itens { padding: 0 12px; }
