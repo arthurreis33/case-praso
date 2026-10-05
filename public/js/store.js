@@ -1,101 +1,371 @@
-// Modelo de dados e persistência. Entidade central: o PONTO físico com estado;
-// as VISITAS ficam penduradas nele (ponto_id). Nada de "lead que vira conta".
+// Modelo de dados e persistência da V2. Entidade central: o PONTO físico com estado.
+// Visitas, pedidos, contatos e eventos ficam pendurados nele por ponto_id; o histórico nunca se perde.
 //
-// Persistência: localStorage, gravação síncrona a cada toque. Escolhido em vez de IndexedDB
-// porque o dado está salvo no instante do toque (fechar a aba logo depois não perde nada)
-// e o volume do campo (dezenas de visitas) é minúsculo. Toda leitura/escrita tem try/catch;
-// sem armazenamento, o app segue em memória e avisa para exportar.
-import { calcularRetorno, setPath } from './rules.js';
+// Persistência: IndexedDB (db.js) + DIÁRIO síncrono no localStorage. A cada toque:
+//   1) o registro muda na memória;
+//   2) os registros alterados vão, na hora e de forma síncrona, para o diário (localStorage);
+//   3) uma transação curta grava os mesmos registros no IndexedDB; ao confirmar, saem do diário.
+// Se a aba fechar entre 2 e 3, a próxima abertura reaplica o diário. Nada no fluxo espera a rede.
+//
+// Estados: nenhum card é movido à mão. reavaliar() roda o motor (estados.js), compara com o gravado
+// e grava um EventoEstado para cada transição (estado e etapa do funil), com a causa.
+import { calcularRetorno, setPath, coordDe, distanciaM } from './rules.js';
+import { avaliar, tipoVisitaPara, DIA_MS } from './estados.js';
+import { migrar, estadoVazioV2, metaVazia, tempos, SCHEMA_VERSION, VENDEDOR_PADRAO } from './migrar.js';
+import { COLECOES, adaptadorMemoria } from './db.js';
+import { CONFIG } from './config.js';
 
-export const SCHEMA_VERSION = 1;
-export const CHAVE = 'praso_campo_v1';
+export { SCHEMA_VERSION };
+export const CHAVE_V1 = 'praso_campo_v1';
+export const CHAVE_DIARIO = 'praso_v2_diario';
+const LIMITE_DIARIO = 1_500_000; // bytes; acima disso (carga do seed) o diário é pulado
 
 const iso = (d) => (d instanceof Date ? d : new Date(d)).toISOString();
-const novoId = () =>
-  globalThis.crypto?.randomUUID?.() ?? `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-
-export function estadoVazio(agora = new Date()) {
-  return { schema_version: SCHEMA_VERSION, criado_em: iso(agora), ultimo_export: null, pontos: [], visitas: [] };
-}
+export const novoId = (pref = '') =>
+  pref + (globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
 export function memoriaStorage() {
   const m = new Map();
   return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
 }
 
-export function criarStore({ storage, agora = () => new Date(), chave = CHAVE } = {}) {
-  let st = storage;
-  const store = {
-    estado: estadoVazio(agora()),
-    erro: null, // texto do último problema de armazenamento, se houver
-    emMemoria: false,
-    ouvintes: new Set(),
+const META_CAMPOS = ['schema_version', 'criado_em', 'ultimo_export', 'config', 'plano_dia', 'migrado_de_v1_em'];
+const TEXTO_CAUSA = {
+  cadastro: 'cadastro detectado', pedido: 'pedido detectado', tempo: 'tempo', registro_visita: 'registro de visita',
+  planejamento: 'entrou na lista do dia', correcao_manual: 'correção manual', migracao: 'migração da V1',
+};
 
-    carregar() {
-      let bruto = null;
+export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaStorage(), agora = () => new Date() } = {}) {
+  let ad = adaptador;
+  const store = {
+    estado: estadoVazioV2(agora()),
+    erro: null,
+    emMemoria: false,
+    migrouV1: 0,
+    ouvintes: new Set(),
+    avancos: new Map(), // ponto_id → { texto, ts } · selo "avançou: …" por alguns segundos
+    _sujos: new Map(),
+    _metaSujo: false,
+    _pend: new Map(),
+    _seq: 0,
+    _ultimaGravacao: Promise.resolve(),
+    _idx: null,
+
+    // ---------- Relógio (o simulador pode avançar N dias) ----------
+    agoraReal: agora,
+    agora() { return new Date(agora().getTime() + (this.estado.config?.relogio_offset_ms || 0)); },
+    get offsetDias() { return Math.round((this.estado.config?.relogio_offset_ms || 0) / DIA_MS); },
+
+    // ---------- Carga ----------
+    async carregar() {
+      let dados = null;
       try {
-        if (!st) throw new Error('sem storage');
-        bruto = st.getItem(chave);
+        await ad.abrir();
+        dados = await ad.lerTudo();
       } catch (e) {
-        this._paraMemoria('Armazenamento do navegador indisponível. Os dados ficam só nesta aba: exporte antes de fechar.');
-        return this;
+        ad = adaptadorMemoria();
+        this.emMemoria = true;
+        this.erro = 'Armazenamento do aparelho indisponível. Os dados ficam só nesta aba: exporte antes de fechar.';
       }
-      if (!bruto) return this;
-      try {
-        const dado = JSON.parse(bruto);
-        this.estado = migrar(dado);
-      } catch (e) {
-        // não descarta o que estava lá: guarda o bruto para recuperação manual
-        try { st.setItem(`${chave}_corrompido_${Date.now()}`, bruto); } catch {}
-        this.erro = 'Os dados salvos estavam ilegíveis; uma cópia foi guardada e o app começou vazio.';
-        this.estado = estadoVazio(agora());
+      if (dados?.meta) {
+        this.estado = { ...metaVazia(agora()), ...dados.meta };
+        COLECOES.forEach((c) => { this.estado[c] = dados[c] || []; });
+      } else {
+        this.estado = estadoVazioV2(agora());
       }
+      const reaplicados = this._reaplicarDiario();
+      if (!dados?.meta && !reaplicados) {
+        // primeira abertura da V2 neste aparelho: migra os dados da V1, se houver (mesmo domínio)
+        const v1 = this._lerStorage(CHAVE_V1);
+        if (v1) {
+          try {
+            this.estado = migrar(JSON.parse(v1), agora());
+            this.migrouV1 = this.estado.pontos.length;
+          } catch (e) {
+            this.erro = `Não consegui migrar os dados da V1 (${e.message}). Eles continuam guardados.`;
+          }
+        }
+        this._tudoSujo();
+      }
+      this._idx = null;
+      this.reavaliarTodos({ silencioso: true });
+      this.salvar();
       return this;
     },
 
-    _paraMemoria(msg) {
-      st = memoriaStorage();
-      this.emMemoria = true;
-      this.erro = msg;
+    _lerStorage(k) { try { return storage?.getItem(k) ?? null; } catch { return null; } },
+
+    _reaplicarDiario() {
+      const bruto = this._lerStorage(CHAVE_DIARIO);
+      if (!bruto) return 0;
+      let ops;
+      try { ops = JSON.parse(bruto); } catch { return 0; }
+      if (!Array.isArray(ops) || !ops.length) return 0;
+      for (const { c, id, v } of ops) {
+        if (c === 'meta') { if (v) Object.assign(this.estado, v); continue; }
+        const lista = this.estado[c];
+        if (!lista) continue;
+        const i = lista.findIndex((x) => x.id === id);
+        if (v == null) { if (i >= 0) lista.splice(i, 1); } else if (i >= 0) lista[i] = v; else lista.push(v);
+        this._sujos.set(`${c}|${id}`, { c, id, v });
+      }
+      this._metaSujo = true;
+      return ops.length;
     },
 
-    salvar() {
-      try {
-        st.setItem(chave, JSON.stringify(this.estado));
-        if (!this.emMemoria) this.erro = null;
-      } catch (e) {
-        this.erro = 'Não consegui salvar no aparelho (armazenamento cheio ou bloqueado). Exporte agora.';
+    // ---------- Gravação ----------
+    _mudou(c, reg) { this._sujos.set(`${c}|${reg.id}`, { c, id: reg.id, v: reg }); this._idx = null; },
+    _apagou(c, id) { this._sujos.set(`${c}|${id}`, { c, id, v: null }); this._idx = null; },
+    _mudouMeta() { this._metaSujo = true; },
+    _tudoSujo() {
+      COLECOES.forEach((c) => this.estado[c].forEach((r) => this._mudou(c, r)));
+      this._metaSujo = true;
+    },
+    _meta() { const m = {}; META_CAMPOS.forEach((k) => { if (k in this.estado) m[k] = this.estado[k]; }); return m; },
+
+    salvar({ diario = true } = {}) {
+      const ops = [...this._sujos.values()];
+      this._sujos.clear();
+      if (this._metaSujo) { ops.push({ c: 'meta', id: 'estado', v: this._meta() }); this._metaSujo = false; }
+      if (ops.length) {
+        const s = ++this._seq;
+        ops.forEach((o) => { o.s = s; this._pend.set(`${o.c}|${o.id}`, o); });
+        if (diario) this._escreverDiario();
+        // a transação copia os registros no momento da chamada (structured clone síncrono)
+        const p = ad.gravar(ops.map(({ c, id, v }) => ({ c, id, v })))
+          .then(() => {
+            ops.forEach((o) => { const k = `${o.c}|${o.id}`; if (this._pend.get(k)?.s === s) this._pend.delete(k); });
+            this._escreverDiario();
+            if (!this.emMemoria && this.erro?.startsWith('Não consegui salvar')) this.erro = null;
+          })
+          .catch(() => { this.erro = 'Não consegui salvar no aparelho (armazenamento cheio ou bloqueado). Exporte agora.'; this._avisar(); });
+        this._ultimaGravacao = p;
       }
-      this.ouvintes.forEach((f) => f(this));
+      this._avisar();
       return !this.erro;
     },
 
+    _escreverDiario() {
+      try {
+        if (!this._pend.size) { storage?.removeItem(CHAVE_DIARIO); return; }
+        const txt = JSON.stringify([...this._pend.values()].map(({ c, id, v }) => ({ c, id, v })));
+        if (txt.length > LIMITE_DIARIO) { storage?.removeItem(CHAVE_DIARIO); return; }
+        storage?.setItem(CHAVE_DIARIO, txt);
+      } catch { /* sem localStorage: segue só com o IndexedDB */ }
+    },
+
+    /** Para testes e para o export: espera a última transação terminar. */
+    gravado() { return this._ultimaGravacao; },
+    _avisar() { this.ouvintes.forEach((f) => f(this)); },
     aoMudar(f) { this.ouvintes.add(f); return () => this.ouvintes.delete(f); },
 
-    // ---------- Pontos ----------
-    ponto(id) { return this.estado.pontos.find((p) => p.id === id); },
+    // ---------- Índices ----------
+    _indice() {
+      if (this._idx) return this._idx;
+      const por = (lista) => { const m = new Map(); for (const x of lista) { if (!m.has(x.ponto_id)) m.set(x.ponto_id, []); m.get(x.ponto_id).push(x); } return m; };
+      this._idx = {
+        pontos: new Map(this.estado.pontos.map((p) => [p.id, p])),
+        visitas: por(this.estado.visitas), pedidos: por(this.estado.pedidos),
+        contatos: por(this.estado.contatos), eventos: por(this.estado.eventos),
+      };
+      return this._idx;
+    },
+    ponto(id) { return this._indice().pontos.get(id); },
+    vendedor(id = this.estado.config.vendedor_id) { return this.estado.vendedores.find((v) => v.id === id) || this.estado.vendedores[0]; },
+    meusPontos() { const vid = this.estado.config.vendedor_id; return this.estado.pontos.filter((p) => (p.vendedor_id || VENDEDOR_PADRAO) === vid); },
+    visita(id) { return this.estado.visitas.find((v) => v.id === id); },
+    visitasDo(pid) { return [...(this._indice().visitas.get(pid) || [])].sort((a, b) => b.checkin.em.localeCompare(a.checkin.em)); },
+    pedidosDo(pid) { return [...(this._indice().pedidos.get(pid) || [])].sort((a, b) => b.data.localeCompare(a.data)); },
+    contatosDo(pid) { return [...(this._indice().contatos.get(pid) || [])].sort((a, b) => b.ts.localeCompare(a.ts)); },
+    /** Mais recente primeiro; no empate de horário, o gravado por último vem antes. */
+    eventosDo(pid) {
+      return (this._indice().eventos.get(pid) || []).map((e, i) => [e, i])
+        .sort(([a, i], [b, j]) => b.ts.localeCompare(a.ts) || j - i).map(([e]) => e);
+    },
+    visitaAberta() { const vid = this.estado.config.vendedor_id; return this.estado.visitas.find((v) => !v.checkout && (v.vendedor_id || VENDEDOR_PADRAO) === vid); },
 
+    /** Situação calculada do ponto (estado, etapa, prazo, compras do ciclo). Não grava nada. */
+    situacao(pid) {
+      const p = this.ponto(pid);
+      if (!p) return null;
+      return avaliar(p, this._indice().pedidos.get(pid) || [], this._indice().visitas.get(pid) || [], this.agora());
+    },
+
+    // ---------- Motor de estados ----------
+    /**
+     * Roda o motor no ponto e grava os EventoEstado das transições novas.
+     * `causa`: dica para a etapa quando ela muda por registro de visita, planejamento ou correção.
+     */
+    reavaliar(pid, { causa = null, autor = 'sistema', silencioso = false } = {}) {
+      const p = this.ponto(pid);
+      if (!p) return null;
+      const res = this.situacao(pid);
+      const evs = this._indice().eventos.get(pid) || [];
+      const ja = new Set(evs.filter((e) => e.dimensao === 'estado').map((e) => `${e.ts}|${e.para}`));
+      const novos = [];
+      for (const tr of res.transicoes) {
+        if (ja.has(`${tr.ts}|${tr.para}`)) continue;
+        // ignora o passado anterior a uma migração/correção já registrada
+        if (p.estado_desde && tr.ts < p.estado_desde && tr.para !== res.estado) continue;
+        novos.push(tr);
+      }
+      const estadoAntes = p.estado;
+      const etapaAntes = p.etapa_funil ?? 0;
+      let mudou = false;
+      for (const tr of novos) {
+        this._evento(p, { ts: tr.ts, dimensao: 'estado', de: tr.de, para: tr.para, causa: tr.causa, autor: 'sistema' });
+      }
+      if (estadoAntes !== res.estado) {
+        if (!novos.some((tr) => tr.para === res.estado)) {
+          this._evento(p, { ts: iso(this.agora()), dimensao: 'estado', de: estadoAntes, para: res.estado, causa: causa || 'correcao_manual', autor });
+        }
+        p.estado = res.estado;
+        p.estado_desde = res.desde || iso(this.agora());
+        mudou = true;
+      }
+      if (etapaAntes !== res.etapa) {
+        const causaEtapa = novos.length ? novos.at(-1).causa : causa || 'registro_visita';
+        this._evento(p, { ts: iso(this.agora()), dimensao: 'etapa', de: etapaAntes, para: res.etapa, causa: causaEtapa, autor });
+        p.etapa_funil = res.etapa;
+        p.etapa_desde = iso(this.agora());
+        mudou = true;
+        if (!silencioso && causaEtapa !== 'correcao_manual') {
+          const sobe = res.etapa > etapaAntes;
+          this.avancos.set(pid, { texto: `${sobe ? 'avançou' : 'mudou'}: ${TEXTO_CAUSA[causaEtapa] || causaEtapa}`, ts: Date.now(), sobe });
+        }
+      } else if (mudou && !silencioso && novos.length) {
+        const c = novos.at(-1);
+        this.avancos.set(pid, { texto: `mudou: ${c.causa === 'tempo' ? (res.estado === 'churn' ? '120 dias sem comprar' : '45 dias sem 3ª compra') : TEXTO_CAUSA[c.causa]}`, ts: Date.now(), sobe: false });
+      }
+      if (mudou) { p.atualizado_em = iso(this.agora()); this._mudou('pontos', p); }
+      return { mudou, de: estadoAntes, para: res.estado, etapaDe: etapaAntes, etapaPara: res.etapa };
+    },
+
+    reavaliarTodos(opts = {}) {
+      let n = 0;
+      for (const p of this.estado.pontos) if (this.reavaliar(p.id, opts)?.mudou) n++;
+      return n;
+    },
+
+    _evento(p, e) {
+      const ev = { id: novoId('ev-'), ponto_id: p.id, ...e };
+      this.estado.eventos.push(ev);
+      this._mudou('eventos', ev);
+      return ev;
+    },
+
+    /**
+     * Única exceção à regra "nunca à mão": corrigir um registro errado. Exige confirmação na tela,
+     * grava causa correcao_manual e não aparece como avanço. Corrige a ENTRADA (resultado da visita
+     * ou estado declarado sem histórico), e o motor recalcula.
+     */
+    corrigirResultadoVisita(visitaId, resultado, autor = 'vendedor') {
+      const v = this.visita(visitaId);
+      if (!v) return null;
+      v.nucleo.resultado = resultado;
+      v.corrigido_em = iso(this.agora());
+      this._mudou('visitas', v);
+      const r = this.reavaliar(v.ponto_id, { causa: 'correcao_manual', autor });
+      this.salvar();
+      return r;
+    },
+    corrigirEstadoDeclarado(pid, estado, autor = 'vendedor') {
+      const p = this.ponto(pid);
+      if (!p) return null;
+      p.estado_base = estado;
+      p.estado_desde = iso(this.agora());
+      this._mudou('pontos', p);
+      const r = this.reavaliar(pid, { causa: 'correcao_manual', autor });
+      this.salvar();
+      return r;
+    },
+
+    // ---------- Eventos do sistema (no protótipo, vêm do simulador) ----------
+    eventoCadastro(pid) {
+      const p = this.ponto(pid);
+      if (!p || p.cadastro_em) return null;
+      p.cadastro_em = iso(this.agora());
+      this._mudou('pontos', p);
+      const r = this.reavaliar(pid, { causa: 'cadastro' });
+      this.salvar();
+      return r;
+    },
+    eventoPedido(pid, { autonomo = true, itens = null, valor = null, forma_pagamento = 'pix', data = null } = {}) {
+      const p = this.ponto(pid);
+      if (!p) return null;
+      const its = itens || this.pedidosDo(pid)[0]?.itens?.map((i) => ({ ...i })) || [];
+      const ped = {
+        id: novoId('pd-'), ponto_id: pid, data: data || iso(this.agora()),
+        valor: valor ?? Math.round(its.reduce((s, i) => s + (i.valor || 0), 0) * 100) / 100,
+        itens: its, forma_pagamento, autonomo: !!autonomo, assistido: !autonomo, pago_em: null, simulado: true,
+      };
+      this.estado.pedidos.push(ped);
+      this._mudou('pedidos', ped);
+      const r = this.reavaliar(pid, { causa: 'pedido' });
+      this.salvar();
+      return { pedido: ped, ...r };
+    },
+    eventoPagamento(pedidoId) {
+      const ped = this.estado.pedidos.find((x) => x.id === pedidoId);
+      if (!ped || ped.pago_em) return null;
+      ped.pago_em = iso(this.agora());
+      this._mudou('pedidos', ped);
+      this.salvar();
+      return ped;
+    },
+    avancarRelogio(dias) {
+      this.estado.config = { ...this.estado.config, relogio_offset_ms: (this.estado.config.relogio_offset_ms || 0) + dias * DIA_MS };
+      this._mudouMeta();
+      const n = this.reavaliarTodos();
+      this.salvar();
+      return n;
+    },
+    zerarRelogio() {
+      this.estado.config = { ...this.estado.config, relogio_offset_ms: 0 };
+      this._mudouMeta();
+      this.reavaliarTodos({ causa: 'tempo', silencioso: true });
+      this.salvar();
+    },
+    setConfig(patch) { this.estado.config = { ...this.estado.config, ...patch }; this._mudouMeta(); this.salvar(); },
+    setPlano(plano) { this.estado.plano_dia = plano; this._mudouMeta(); this.salvar(); },
+
+    // ---------- Pontos ----------
     novoPonto(d = {}) {
+      const t = iso(this.agora());
       const p = {
-        id: novoId(),
-        nome: (d.nome || '').trim(),
-        tipo: d.tipo || 'outro',
-        endereco: (d.endereco || '').trim(),
+        id: d.id || novoId(),
         cnpj: limparCnpj(d.cnpj),
-        lat: d.lat ?? null,
-        lng: d.lng ?? null,
-        precisao_m: d.precisao_m ?? null,
-        coord_fonte: d.lat != null ? (d.coord_fonte || 'gps_criacao') : null,
-        estado: d.estado || 'lead',
+        razao_social: d.razao_social || null,
+        nome_fantasia: (d.nome_fantasia ?? d.nome ?? '').trim(),
+        tipo: d.tipo || 'outro',
+        mei: d.mei ?? null,
+        cnae: d.cnae || null,
+        situacao: d.situacao || null,
+        endereco_cadastral: (d.endereco_cadastral ?? d.endereco ?? '').trim(),
+        coord_cadastral: d.coord_cadastral || null,
+        coord_confirmada: d.coord_confirmada || null,
+        horario_funcionamento: d.horario_funcionamento || null,
+        decisor: d.decisor || null,
+        quem_paga: d.quem_paga || null,
+        cadastro_em: d.cadastro_em || null,
+        estado: 'lead',
+        estado_base: d.estado_base || null,
+        etapa_funil: 0,
+        origem: d.origem || 'campo',
+        vendedor_id: d.vendedor_id || this.estado.config.vendedor_id,
         status_dia: 'a_visitar',
         retorno_sugerido: null,
         retorno_motivo: null,
-        decisor: null, // { quem, faixas, dias, atualizado_em } — copiado da última visita
-        criado_em: iso(agora()),
-        origem: d.origem || 'lista',
+        planejado_em: null,
+        verificar: !!d.verificar,
         ficticio: !!d.ficticio,
+        criado_em: t,
+        atualizado_em: t,
       };
+      if (typeof d.alto_potencial === 'boolean') p.alto_potencial = d.alto_potencial;
       this.estado.pontos.push(p);
+      this._mudou('pontos', p);
+      this.reavaliar(p.id, { silencioso: true });
       this.salvar();
       return p;
     },
@@ -104,76 +374,121 @@ export function criarStore({ storage, agora = () => new Date(), chave = CHAVE } 
       const p = this.ponto(id);
       if (!p) return null;
       if ('cnpj' in patch) patch = { ...patch, cnpj: limparCnpj(patch.cnpj) };
-      if (patch.status_dia && patch.status_dia !== 'retornar') {
-        patch = { ...patch, retorno_sugerido: null, retorno_motivo: null };
-      }
-      Object.assign(p, patch);
+      if (patch.status_dia && patch.status_dia !== 'retornar') patch = { ...patch, retorno_sugerido: null, retorno_motivo: null };
+      Object.assign(p, patch, { atualizado_em: iso(this.agora()) });
+      this._mudou('pontos', p);
       this.salvar();
       return p;
     },
 
-    removerFicticios() {
-      const ids = new Set(this.estado.pontos.filter((p) => p.ficticio).map((p) => p.id));
-      this.estado.pontos = this.estado.pontos.filter((p) => !ids.has(p.id));
-      this.estado.visitas = this.estado.visitas.filter((v) => !ids.has(v.ponto_id));
+    /** Pino: a posição confirmada (check-in ou arraste) sempre prevalece sobre a cadastral. */
+    corrigirPino(id, { lat, lng, precisao_m = null }, origem = 'manual') {
+      const p = this.ponto(id);
+      if (!p) return null;
+      p.coord_confirmada = { lat, lng, precisao_m: precisao_m != null ? Math.round(precisao_m) : null, origem, em: iso(this.agora()) };
+      p.atualizado_em = iso(this.agora());
+      this._mudou('pontos', p);
+      this.salvar();
+      return p;
+    },
+
+    marcarPlanejado(ids) {
+      const t = iso(this.agora());
+      for (const id of ids) {
+        const p = this.ponto(id);
+        if (!p) continue;
+        if (!p.planejado_em || p.planejado_em < (p.estado_desde || '')) { p.planejado_em = t; this._mudou('pontos', p); }
+        this.reavaliar(id, { causa: 'planejamento', silencioso: true });
+      }
       this.salvar();
     },
 
-    // ---------- Visitas ----------
-    visita(id) { return this.estado.visitas.find((v) => v.id === id); },
-    visitasDo(pontoId) {
-      return this.estado.visitas.filter((v) => v.ponto_id === pontoId).sort((a, b) => b.checkin.em.localeCompare(a.checkin.em));
+    removerFicticios() {
+      const ids = new Set(this.estado.pontos.filter((p) => p.ficticio).map((p) => p.id));
+      for (const c of ['visitas', 'pedidos', 'contatos', 'eventos']) {
+        this.estado[c] = this.estado[c].filter((x) => { if (ids.has(x.ponto_id)) { this._apagou(c, x.id); return false; } return true; });
+      }
+      this.estado.pontos = this.estado.pontos.filter((p) => { if (ids.has(p.id)) { this._apagou('pontos', p.id); return false; } return true; });
+      this.estado.desconhecidos.forEach((d) => this._apagou('desconhecidos', d.id));
+      this.estado.desconhecidos = [];
+      this.estado.vendedores = this.estado.vendedores.filter((v) => { if (v.ficticio) { this._apagou('vendedores', v.id); return false; } return true; });
+      this.estado.plano_dia = null;
+      this._mudouMeta();
+      this.salvar();
+      return ids.size;
     },
-    visitaAberta() { return this.estado.visitas.find((v) => !v.checkout); },
 
-    /** RF05 · check-in. Cria a visita na hora; a posição chega depois (registrarGeo) e nada espera o GPS. */
+    /** Carrega um lote (seed) de uma vez, sem passar pelo diário. */
+    carregarLote({ pontos = [], visitas = [], pedidos = [], contatos = [], eventos = [], vendedores = [], desconhecidos = [] }) {
+      const add = (c, lista) => lista.forEach((x) => { this.estado[c].push(x); this._mudou(c, x); });
+      add('vendedores', vendedores.filter((v) => !this.estado.vendedores.some((x) => x.id === v.id)));
+      add('pontos', pontos); add('visitas', visitas); add('pedidos', pedidos);
+      add('contatos', contatos); add('eventos', eventos); add('desconhecidos', desconhecidos);
+      for (const p of pontos) this.reavaliar(p.id, { silencioso: true });
+      this._mudouMeta();
+      this.salvar({ diario: false });
+    },
+
+    // ---------- Visitas ----------
     checkin(pontoId) {
       const aberta = this.visitaAberta();
       if (aberta) throw new Error('Já existe uma visita aberta. Faça o check-out dela primeiro.');
       const p = this.ponto(pontoId);
       if (!p) throw new Error('Ponto não encontrado');
+      const plano = this.estado.plano_dia;
+      const parada = plano?.paradas?.find((x) => x.id === pontoId);
       const v = {
         id: novoId(),
         ponto_id: pontoId,
-        checkin: { em: iso(agora()), lat: null, lng: null, precisao_m: null, gps_erro: null, gps_em: null },
+        vendedor_id: this.estado.config.vendedor_id,
+        tipo: tipoVisitaPara(p.estado),
+        estado_no_checkin: p.estado,
+        planejada_para: parada?.chegada || null,
+        checkin: { em: iso(this.agora()), lat: null, lng: null, precisao_m: null, gps_erro: null, gps_em: null, distancia_pino_m: null },
         checkout: null,
-        // se era um retorno, guarda o que foi sugerido para medir a tese do laço
-        retorno_previsto: p.status_dia === 'retornar' && p.retorno_sugerido
-          ? { quando: p.retorno_sugerido, motivo: p.retorno_motivo } : null,
+        retorno_previsto: p.status_dia === 'retornar' && p.retorno_sugerido ? { quando: p.retorno_sugerido, motivo: p.retorno_motivo } : null,
         versao_conversa: null,
         observacao: [],
         nucleo: { resultado: null, quem_decide: null, faixas: [], dias: [], inicio: null, fim: null, editado_em: null },
+        motivo_nao_avanco: null,
+        proxima_acao: null,
         pesquisa: { inicio: null, fim: null },
         surpresa: '',
-        registro_modo: null,
+        nota_texto: '',
+        nota_origem: null,
+        transcricao_status: null,
+        campos_ia: [],
       };
       this.estado.visitas.push(v);
+      this._mudou('visitas', v);
       this.salvar();
       return v;
     },
 
+    /** GPS do check-in. Devolve a distância até o pino anterior (para a pergunta "corrigir o pino?"). */
     registrarGeo(visitaId, pos, erro) {
       const v = this.visita(visitaId);
-      if (!v) return;
+      if (!v) return null;
+      let dist = null;
       if (pos) {
-        Object.assign(v.checkin, { lat: pos.lat, lng: pos.lng, precisao_m: Math.round(pos.precisao_m), gps_erro: null, gps_em: iso(agora()) });
-        // o pino do ponto passa a ser o do check-in (é a coordenada confiável — H2)
         const p = this.ponto(v.ponto_id);
-        if (p) Object.assign(p, { lat: pos.lat, lng: pos.lng, precisao_m: Math.round(pos.precisao_m), coord_fonte: 'checkin' });
+        const c = coordDe(p);
+        dist = c ? distanciaM(c.lat, c.lng, pos.lat, pos.lng) : null;
+        Object.assign(v.checkin, { lat: pos.lat, lng: pos.lng, precisao_m: Math.round(pos.precisao_m), gps_erro: null, gps_em: iso(this.agora()), distancia_pino_m: dist });
+        // Sem pino nenhum, ou pino a menos do limiar: a posição do check-in vira o pino confirmado.
+        if (p && (!c || dist <= CONFIG.limiar_corrigir_pino_m)) this.corrigirPino(p.id, pos, 'checkin');
       } else {
         v.checkin.gps_erro = erro || 'falhou';
       }
+      this._mudou('visitas', v);
       this.salvar();
+      return dist;
     },
 
-    /**
-     * Grava um campo da visita (caminho tipo "nucleo.resultado" ou "pesquisa.apps.estimulado.conhece")
-     * e marca os relógios do RF11: núcleo = primeiro toque; pesquisa = primeiro e último toque.
-     */
     setCampo(visitaId, caminho, valor) {
       const v = this.visita(visitaId);
       if (!v) return;
-      const t = iso(agora());
+      const t = iso(this.agora());
       if (caminho.startsWith('nucleo.')) {
         if (!v.nucleo.inicio) v.nucleo.inicio = t;
         if (v.nucleo.fim) v.nucleo.editado_em = t;
@@ -183,45 +498,57 @@ export function criarStore({ storage, agora = () => new Date(), chave = CHAVE } 
         v.pesquisa.fim = t;
       }
       setPath(v, caminho, valor);
-      // depois de salvo o núcleo, ou depois do check-out, edições reavaliam o laço
-      if (v.nucleo.fim || v.checkout) this._aplicarLaco(v);
+      if (v.campos_ia?.includes(caminho)) v.campos_ia = v.campos_ia.filter((c) => c !== caminho);
+      this._mudou('visitas', v);
+      if (v.nucleo.fim || v.checkout) { this._aplicarLaco(v); this.reavaliar(v.ponto_id, { causa: 'registro_visita', autor: 'vendedor' }); }
       this.salvar();
     },
 
-    /** RF06 · "salvar" o núcleo fecha o relógio do núcleo e já alimenta o laço. */
     salvarNucleo(visitaId) {
       const v = this.visita(visitaId);
       if (!v || !v.nucleo.resultado) return null;
-      if (!v.nucleo.fim) v.nucleo.fim = iso(agora());
+      if (!v.nucleo.fim) v.nucleo.fim = iso(this.agora());
       if (!v.nucleo.inicio) v.nucleo.inicio = v.nucleo.fim;
       const p = this.ponto(v.ponto_id);
       if (p && (v.nucleo.quem_decide || v.nucleo.faixas.length)) {
-        p.decisor = { quem: v.nucleo.quem_decide, faixas: [...v.nucleo.faixas], dias: [...v.nucleo.dias], atualizado_em: v.nucleo.fim };
+        p.decisor = {
+          papel: v.nucleo.quem_decide || p.decisor?.papel || null,
+          janela: v.nucleo.faixas.length ? { dias: [...v.nucleo.dias], faixas: [...v.nucleo.faixas] } : p.decisor?.janela || { dias: [], faixas: [] },
+          atualizado_em: v.nucleo.fim,
+        };
+        this._mudou('pontos', p);
       }
+      const qp = v.pesquisa?.papeis?.quem_paga;
+      if (p && qp) { p.quem_paga = qp === 'decisor' ? 'decisor' : 'outro'; this._mudou('pontos', p); }
+      this._mudou('visitas', v);
       const r = this._aplicarLaco(v);
+      this.reavaliar(v.ponto_id, { causa: 'registro_visita', autor: 'vendedor' });
       this.salvar();
       return r;
     },
 
-    /** RF09 · check-out grava a saída. A visita continua editável (surpresa é preenchida depois de sair). */
     checkout(visitaId) {
       const v = this.visita(visitaId);
       if (!v || v.checkout) return v;
-      v.checkout = { em: iso(agora()) };
+      v.checkout = { em: iso(this.agora()) };
+      v.tempos = { ...tempos(v), nota_origem: v.nota_origem };
+      this._mudou('visitas', v);
       this._aplicarLaco(v);
+      this.reavaliar(v.ponto_id, { causa: 'registro_visita', autor: 'vendedor' });
       this.salvar();
       return v;
     },
 
-    /** RF10 · o registro de hoje muda o dia seguinte. */
+    /** RF10 · o registro de hoje muda o dia seguinte (retorno com hora). */
     _aplicarLaco(v) {
       const p = this.ponto(v.ponto_id);
       if (!p) return null;
-      // só a visita mais recente do ponto manda no status dele
       const ultima = this.visitasDo(p.id)[0];
       if (ultima && ultima.id !== v.id) return null;
-      const ref = new Date(v.checkout?.em || v.nucleo.fim || agora());
-      const r = calcularRetorno(v, ref);
+      const ref = new Date(v.checkout?.em || v.nucleo.fim || this.agora());
+      let r = calcularRetorno(v, ref);
+      // V2: a próxima ação confirmada pelo vendedor também agenda o retorno
+      if (!r && v.proxima_acao?.tipo === 'retorno' && v.proxima_acao.data_hora) r = { quando: new Date(v.proxima_acao.data_hora), motivo: 'proxima_acao' };
       if (r) {
         p.status_dia = 'retornar';
         p.retorno_sugerido = iso(r.quando);
@@ -231,32 +558,56 @@ export function criarStore({ storage, agora = () => new Date(), chave = CHAVE } 
         p.retorno_motivo = null;
         if (v.checkout || v.nucleo.fim) p.status_dia = 'visitado';
       }
+      this._mudou('pontos', p);
       return r;
     },
 
+    // ---------- Contatos (WhatsApp) ----------
+    registrarContato(pid, { canal = 'whatsapp', modelo_mensagem = null, gerado_pela_plataforma = true } = {}) {
+      const c = { id: novoId('ct-'), ponto_id: pid, ts: iso(this.agora()), canal, modelo_mensagem, gerado_pela_plataforma, vendedor_id: this.estado.config.vendedor_id };
+      this.estado.contatos.push(c);
+      this._mudou('contatos', c);
+      this.salvar();
+      return c;
+    },
+
     // ---------- Backup ----------
-    marcarExport() { this.estado.ultimo_export = iso(agora()); this.salvar(); },
+    marcarExport() { this.estado.ultimo_export = iso(this.agoraReal()); this._mudouMeta(); this.salvar(); },
 
     importar(texto) {
-      const dado = migrar(JSON.parse(texto));
-      if (!Array.isArray(dado.pontos) || !Array.isArray(dado.visitas)) throw new Error('Arquivo não parece um export desta V1.');
-      try { st.setItem(`${chave}_antes_import_${Date.now()}`, JSON.stringify(this.estado)); } catch {}
-      this.estado = dado;
+      const novo = migrar(JSON.parse(texto), this.agora());
+      try { storage?.setItem(`praso_v2_antes_import_${Date.now()}`, JSON.stringify(this._meta())); } catch {}
+      COLECOES.forEach((c) => this.estado[c].forEach((x) => this._apagou(c, x.id)));
+      this.estado = novo;
+      this._idx = null;
+      this._tudoSujo();
+      this.reavaliarTodos({ silencioso: true });
+      this.salvar({ diario: false });
+      return novo.pontos.length;
+    },
+
+    async apagarTudo() {
+      await ad.limpar();
+      try { storage?.removeItem(CHAVE_DIARIO); } catch {}
+      this._pend.clear();
+      this._sujos.clear();
+      this.estado = estadoVazioV2(agora());
+      this._idx = null;
+      this._metaSujo = true;
       this.salvar();
     },
+
+    // ---------- Áudio (nota por voz) ----------
+    salvarAudio(id, blob) { return ad.salvarAudio(id, blob); },
+    lerAudio(id) { return ad.lerAudio(id); },
+    apagarAudio(id) { return ad.apagarAudio(id); },
   };
   return store;
-}
-
-/** Migração de schema. Hoje só existe a v1; o ponto de extensão fica aqui para a V2. */
-export function migrar(dado) {
-  if (!dado || typeof dado !== 'object') throw new Error('formato inválido');
-  const v = dado.schema_version ?? 1;
-  if (v > SCHEMA_VERSION) throw new Error(`Export de versão mais nova (${v}).`);
-  return { ...estadoVazio(), ...dado, schema_version: SCHEMA_VERSION };
 }
 
 export function limparCnpj(c) {
   const d = String(c ?? '').replace(/\D/g, '');
   return d.length ? d : null;
 }
+
+export const nomeDe = (p) => p?.nome_fantasia || p?.razao_social || 'Sem nome';

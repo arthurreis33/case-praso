@@ -1,12 +1,14 @@
-// RF12 · export. JSON = estado completo (alimenta a V2 e o script de H2).
+// RF12 · export. JSON = estado completo (schema 2: pontos, visitas, pedidos, contatos, eventos…).
 // CSV = uma linha por visita com os dados do ponto juntos, pronto para planilha.
+// Compatibilidade com a V1: as 55 colunas da V1 vêm primeiro, com os mesmos nomes e na mesma ordem;
+// as colunas novas da V2 entram depois. Atenção: ponto_estado passa a usar os 6 estados da V2.
 // CSV com ";" e BOM UTF-8: abre direto no Excel em português (que usa vírgula como decimal);
 // o Google Sheets detecta o separador sozinho.
-import { duracoes } from './rules.js';
+import { duracoes, pontosValor } from './rules.js';
 import { SCHEMA_VERSION } from './store.js';
 
 export function paraJSON(estado, agora = new Date()) {
-  return JSON.stringify({ ...estado, schema_version: SCHEMA_VERSION, exportado_em: agora.toISOString() }, null, 2);
+  return JSON.stringify({ ...estado, schema_version: SCHEMA_VERSION, exportado_em: agora.toISOString() });
 }
 
 const lista = (a) => (Array.isArray(a) ? a.join('|') : a ?? '');
@@ -21,9 +23,9 @@ const COLUNAS = [
   ['schema_version', () => SCHEMA_VERSION],
   ['visita_id', (p, v) => v.id],
   ['ponto_id', (p) => p.id],
-  ['ponto_nome', (p) => p.nome],
+  ['ponto_nome', (p) => p.nome_fantasia ?? p.nome],
   ['ponto_tipo', (p) => p.tipo],
-  ['ponto_endereco', (p) => p.endereco],
+  ['ponto_endereco', (p) => p.endereco_cadastral ?? p.endereco],
   ['ponto_cnpj', (p) => p.cnpj],
   ['ponto_estado', (p) => p.estado],
   ['ponto_status_dia', (p) => p.status_dia],
@@ -66,13 +68,31 @@ const COLUNAS = [
   ['p8_melhor_dias', (p, v) => lista(v.pesquisa?.fechamento?.melhor_horario?.dias)],
   ['p8_indicacao', (p, v) => v.pesquisa?.fechamento?.indicacao],
   ['surpresa', (p, v) => v.surpresa],
-  ['registro_modo', (p, v) => v.registro_modo],
+  ['registro_modo', (p, v) => v.nota_origem ?? v.registro_modo],
   ['tempo_no_ponto_s', (p, v, d) => d.tempo_no_ponto_s],
   ['tempo_nucleo_s', (p, v, d) => d.tempo_nucleo_s],
   ['tempo_pesquisa_s', (p, v, d) => d.tempo_pesquisa_s],
   ['nucleo_salvo_no_ponto', (p, v, d) => (d.nucleo_no_ponto == null ? '' : d.nucleo_no_ponto ? 'sim' : 'nao')],
   ['revisita_retorno_previsto', (p, v) => local(v.retorno_previsto?.quando)],
   ['revisita_desvio_min', (p, v, d) => d.revisita_desvio_min],
+  // ---- V2 (colunas novas, sempre depois das da V1) ----
+  ['v2_vendedor_id', (p, v) => v.vendedor_id],
+  ['v2_visita_tipo', (p, v) => v.tipo],
+  ['v2_estado_no_checkin', (p, v) => v.estado_no_checkin],
+  ['v2_planejada_para', (p, v) => local(v.planejada_para)],
+  ['v2_checkin_distancia_pino_m', (p, v) => v.checkin?.distancia_pino_m],
+  ['v2_motivo_nao_avanco', (p, v) => v.motivo_nao_avanco],
+  ['v2_proxima_acao', (p, v) => v.proxima_acao?.tipo],
+  ['v2_proxima_acao_quando', (p, v) => local(v.proxima_acao?.data_hora)],
+  ['v2_nota_texto', (p, v) => v.nota_texto],
+  ['v2_nota_origem', (p, v) => v.nota_origem],
+  ['v2_transcricao_status', (p, v) => v.transcricao_status],
+  ['v2_campos_ia', (p, v) => lista(v.campos_ia)],
+  ['v2_o_que_faria_trocar', (p, v) => lista(v.pesquisa?.troca?.o_que_faria_trocar)],
+  ['v2_ponto_etapa_funil', (p) => p.etapa_funil],
+  ['v2_ponto_mei', (p) => (p.mei == null ? '' : p.mei ? 'sim' : 'nao')],
+  ['v2_ponto_pontos_valor', (p) => (p.id ? String(pontosValor(p)).replace('.', ',') : '')],
+  ['v2_ponto_coord_confirmada_origem', (p) => p.coord_confirmada?.origem],
 ];
 
 function celula(x) {
@@ -81,9 +101,9 @@ function celula(x) {
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export function paraCSV(estado) {
+export function paraCSV(estado, opcoes = { todas: true }) {
   const pontos = new Map(estado.pontos.map((p) => [p.id, p]));
-  const visitas = [...estado.visitas].sort((a, b) => a.checkin.em.localeCompare(b.checkin.em));
+  const visitas = [...estado.visitas].filter((v) => opcoes.todas || !v.ficticio).sort((a, b) => a.checkin.em.localeCompare(b.checkin.em));
   const linhas = [COLUNAS.map(([c]) => c).join(';')];
   for (const v of visitas) {
     const p = pontos.get(v.ponto_id) || {};
@@ -110,6 +130,10 @@ export function baixar(conteudo, nome, tipo) {
 }
 
 /** Compartilha pelo menu do Android (WhatsApp, Drive, e-mail), quando o navegador suporta arquivos. */
+export function podeCompartilharArquivo() {
+  try { return typeof File === 'function' && !!navigator.canShare?.({ files: [new File(['x'], 't.txt', { type: 'text/plain' })] }); } catch { return false; }
+}
+
 export async function compartilhar(conteudo, nome, tipo) {
   const arquivo = new File([conteudo], nome, { type: tipo });
   if (!navigator.canShare?.({ files: [arquivo] })) return false;

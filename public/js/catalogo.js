@@ -7,8 +7,24 @@ export const TIPOS = [
   ['bar', 'Bar'], ['outro', 'Outro'],
 ];
 
+// V2 · estado do ponto (seção 5). Chave interna → rótulo com o vocabulário da Praso.
 export const ESTADOS = [
-  ['lead', 'Lead'], ['oportunidade', 'Oportunidade'], ['cliente', 'Cliente'], ['churn', 'Churn'],
+  ['lead', 'Lead'], ['cadastrado_sem_compra', 'Oportunidade'], ['ativacao', 'Em ativação'],
+  ['recorrente', 'Recorrente'], ['ativacao_vencida', 'Ativação vencida'], ['churn', 'Oportunidade (churn)'],
+];
+// V1 · usado só pela migração
+export const ESTADOS_V1 = [['lead', 'Lead'], ['oportunidade', 'Oportunidade'], ['cliente', 'Cliente'], ['churn', 'Churn']];
+
+// Etapas do funil (1 a 6). 0 = ainda fora do funil do ciclo atual.
+export const ETAPAS = [
+  [1, 'Visita planejada'], [2, 'Visita efetiva'], [3, 'Decisor'],
+  [4, 'Cadastro'], [5, '1ª compra'], [6, '3ª compra autônoma'],
+];
+export const ORIGENS = [['base_praso', 'Base Praso'], ['receita', 'Receita'], ['mapa_aberto', 'Mapa aberto'], ['campo', 'Campo']];
+export const TIPOS_VISITA = [['aquisicao', 'Aquisição'], ['acompanhamento', 'Acompanhamento'], ['reconquista', 'Reconquista']];
+export const CAUSAS = [
+  ['registro_visita', 'registro de visita'], ['cadastro', 'cadastro detectado'], ['pedido', 'pedido detectado'],
+  ['tempo', 'tempo'], ['correcao_manual', 'correção manual'], ['planejamento', 'entrou na lista do dia'], ['migracao', 'migração da V1'],
 ];
 
 export const STATUS_DIA = [
@@ -16,17 +32,19 @@ export const STATUS_DIA = [
 ];
 
 // RF06 · núcleo de 3 toques
+// "fechado" = o ESTABELECIMENTO estava fechado (não é negócio fechado). Chave mantida da V1.
 export const RESULTADOS = [
-  ['fechado', 'Fechado'], ['aberto_sem_decisor', 'Aberto sem decisor'],
+  ['fechado', 'Ponto fechado'], ['aberto_sem_decisor', 'Aberto sem decisor'],
   ['falou_com_decisor', 'Falou com decisor'], ['recusou', 'Recusou'],
 ];
 export const QUEM_DECIDE = [
   ['dono', 'Dono'], ['socio', 'Sócio'], ['gerente', 'Gerente'], ['cozinheiro', 'Cozinheiro'], ['outro', 'Outro'],
 ];
-// início em minutos desde 00h; usado pelo laço de retorno (RF10)
+// [chave, rótulo, início, fim] em minutos desde 00h; usado pelo laço de retorno (RF10) e pelo roteirizador
 export const FAIXAS = [
-  ['6-9', '6h–9h', 6 * 60], ['9-1130', '9h–11h30', 9 * 60], ['1130-14', '11h30–14h', 11 * 60 + 30],
-  ['14-17', '14h–17h', 14 * 60], ['17-20', '17h–20h', 17 * 60], ['noite', 'Noite', 20 * 60],
+  ['6-9', '6h–9h', 6 * 60, 9 * 60], ['9-1130', '9h–11h30', 9 * 60, 11 * 60 + 30],
+  ['1130-14', '11h30–14h', 11 * 60 + 30, 14 * 60], ['14-17', '14h–17h', 14 * 60, 17 * 60],
+  ['17-20', '17h–20h', 17 * 60, 20 * 60], ['noite', 'Noite', 20 * 60, 23 * 60],
 ];
 // valor = getDay() do JS (0 = domingo); exibido de seg a dom
 export const DIAS = [
@@ -63,8 +81,28 @@ export const PRAZOS = [
   ['vista', 'À vista'], ['7', '7 dias'], ['14', '14 dias'], ['28-30', '28 a 30 dias'], ['30+', 'Mais de 30'],
 ];
 
-// RF11 · como o texto foi registrado
+// RF11 · como o texto foi registrado (V2: nota_origem)
 export const MODOS_REGISTRO = [['voz', 'Voz'], ['digitacao', 'Digitação'], ['misto', 'Os dois']];
+
+// V2 · motivo de não avanço (só aparece quando o resultado não é avanço)
+export const MOTIVOS_NAO_AVANCO = [
+  ['tem_fornecedor', 'Já tem fornecedor'], ['preco', 'Preço'], ['quer_prazo', 'Quer prazo'],
+  ['desconfia_app', 'Desconfia de app'], ['sem_tempo', 'Sem tempo agora'], ['vai_pensar', 'Vai pensar'],
+  ['nao_icp', 'Não é ICP'], ['outro', 'Outro'],
+];
+// V2 · próxima ação
+export const PROXIMAS_ACOES = [
+  ['retorno', 'Retornar'], ['acompanhar_1a_compra', 'Acompanhar 1ª compra'], ['mensagem_recompra', 'Mensagem de recompra'],
+  ['lembrete_1a_compra', 'Lembrete de 1ª compra'], ['reconquista', 'Tentar reconquista'], ['nenhuma', 'Sem próxima ação'],
+];
+// V2 · bloco de pesquisa: o que o faria trocar de fornecedor
+export const GATILHOS_TROCA = [
+  ['preco', 'Preço'], ['prazo_pagamento', 'Prazo de pagamento'], ['entrega_rapida', 'Entrega rápida'],
+  ['sem_minimo', 'Sem pedido mínimo'], ['qualidade', 'Qualidade'], ['atendimento', 'Atendimento'], ['nada', 'Nada'],
+];
+export const QUEM_PAGA_PONTO = [['decisor', 'O decisor'], ['outro', 'Outra pessoa']];
+export const DESCARTE = [['fechou', 'Fechou'], ['nao_icp', 'Não é ICP'], ['duplicado', 'Duplicado']];
+export const MODOS_DESLOCAMENTO = [['moto', 'Moto'], ['carro', 'Carro'], ['a_pe', 'A pé']];
 
 export function rotulo(lista, valor) {
   const item = lista.find(([v]) => v === valor);

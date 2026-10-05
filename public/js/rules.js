@@ -1,5 +1,6 @@
 // Regras de negócio puras (sem DOM, sem armazenamento). Testadas em tests/rules.test.mjs.
 import { FAIXAS } from './catalogo.js';
+import { CONFIG, min } from './config.js';
 
 const INICIO_FAIXA = Object.fromEntries(FAIXAS.map(([v, , min]) => [v, min]));
 
@@ -82,4 +83,55 @@ export function distanciaM(lat1, lng1, lat2, lng2) {
   const a = Math.sin(r(lat2 - lat1) / 2) ** 2 +
     Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(r(lng2 - lng1) / 2) ** 2;
   return Math.round(2 * R * Math.asin(Math.sqrt(a)));
+}
+
+// ---------------- V2 ----------------
+
+/** PREMISSA: alto potencial = flag explícita do ponto, senão o critério configurável. */
+export function altoPotencial(p, cfg = CONFIG.alto_potencial) {
+  if (typeof p.alto_potencial === 'boolean') return p.alto_potencial;
+  if (cfg.exige_nao_mei && p.mei !== false) return false;
+  return cfg.tipos_alto_consumo.includes(p.tipo);
+}
+
+/** Pontuação de aquisição: MEI 0,5 · não MEI 1 · alto potencial 3. MEI desconhecido vale 1. */
+export function pontosValor(p, cfg = CONFIG.pontos) {
+  if (p.nao_icp) return 0;
+  if (altoPotencial(p)) return cfg.alto_potencial;
+  if (p.mei === true) return cfg.mei;
+  if (p.mei === false) return cfg.nao_mei;
+  return cfg.mei_desconhecido;
+}
+
+export const fmtPontos = (n) => (Number.isInteger(n) ? String(n) : String(n).replace('.', ','));
+
+/** Coordenada a usar: a confirmada (check-in ou arraste) sempre prevalece sobre a cadastral. */
+export function coordDe(p) {
+  return p?.coord_confirmada || p?.coord_cadastral || null;
+}
+
+/** Faixas de funcionamento do ponto (registradas ou padrão do tipo), em minutos. */
+export function faixasFuncionamento(p, cfg = CONFIG.funcionamento_padrao) {
+  const f = p.horario_funcionamento?.faixas?.length ? p.horario_funcionamento.faixas : cfg[p.tipo] || cfg.outro;
+  return f.map(([a, b]) => [min(a), min(b)]);
+}
+
+/** O ponto abre neste dia da semana? (sem dias registrados = todo dia) */
+export function abreNoDia(p, dia) {
+  const dias = p.horario_funcionamento?.dias;
+  return !dias?.length || dias.map(String).includes(String(dia));
+}
+
+/** Similaridade de nomes (0–1) por bigramas, depois de normalizar acento/caixa. */
+export function similaridade(a, b) {
+  const n = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/\b(restaurante|lanchonete|padaria|bar|pizzaria|hamburgueria|cafeteria|lanches|do|da|de|e)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+  const bi = (s) => { const r = []; for (let i = 0; i < s.length - 1; i++) r.push(s.slice(i, i + 2)); return r; };
+  const x = bi(n(a)), y = bi(n(b));
+  if (!x.length || !y.length) return n(a) === n(b) && n(a) ? 1 : 0;
+  const pool = [...y];
+  let hit = 0;
+  for (const g of x) { const i = pool.indexOf(g); if (i >= 0) { hit++; pool.splice(i, 1); } }
+  return (2 * hit) / (x.length + y.length);
 }
