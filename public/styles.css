@@ -333,3 +333,23 @@ body.sobreposicao #toast { bottom: calc(var(--barra-h) + 14px + env(safe-area-in
 .linha-c .acao-c { flex: 0 0 auto; min-height: 44px; min-width: 64px; border: 2px solid var(--texto); border-radius: var(--raio); background: var(--fundo); font: inherit; font-weight: 800; color: var(--primaria); padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .linha-c .ok-c { font-size: .8rem; color: var(--ok); font-weight: 800; flex: 0 0 auto; }
 .bloco-topo .itens { padding: 0 12px; }
+
+/* Painéis: série 1 = você (azul), série 2 = quartil de cima (laranja), validadas no dataviz */
+:root { --serie-1: #2a78d6; --serie-2: #eb6834; }
+.comp .trilho .voce { background: var(--serie-1); }
+.comp .trilho .top { background: var(--serie-2); }
+.leg-comp .i1 { background: var(--serie-1); } .leg-comp .i2 { background: var(--serie-2); }
+.comp .val { font-size: .78rem; color: var(--sutil); font-variant-numeric: tabular-nums; }
+.calor td.c { text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; border: 2px solid var(--fundo); border-radius: 4px; }
+.calor th { font-size: .78rem; text-align: center; }
+.calor td.nome-v { font-weight: 700; white-space: nowrap; }
+.tabela-rolagem { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+.insight { border-left: 6px solid var(--serie-2); padding: 6px 10px; background: var(--cartao); margin: 6px 0; border-radius: 0 var(--raio) var(--raio) 0; font-size: .95rem; }
+
+.comp .trilho { position: static; height: auto; display: grid; gap: 3px; padding: 4px 0; }
+.comp .lb { display: grid; grid-template-columns: 1fr 40px; align-items: center; gap: 6px; }
+.comp .lb .b { display: block; height: 11px; border-radius: 0 4px 4px 0; min-width: 2px; position: static; }
+.comp .lb .b.voce { background: var(--serie-1); }
+.comp .lb .b.top { background: var(--serie-2); }
+.comp > div[role=rowheader] { font-weight: 700; }
+.nome-v { white-space: nowrap; font-weight: 700; }

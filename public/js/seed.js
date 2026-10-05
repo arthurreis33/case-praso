@@ -115,6 +115,7 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
 
   const bairros = Object.entries(BAIRROS).flatMap(([b, cfg]) => Array(cfg.n).fill(b));
   const nAtivPerto = { n: 0 };
+  const nConquistas = { n: 0 };
 
   const novoNome = (tipo, bairro) => {
     for (let k = 0; k < 20; k++) {
@@ -234,7 +235,15 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
       if (r.chance(0.4)) contatos.push({ id: id('ct-'), ponto_id: p.id, ts: iso(H - r.int(1, Math.max(1, d - 1)) * DIA_MS), canal: 'whatsapp', modelo_mensagem: 'lembrete_1a_compra', gerado_pela_plataforma: true, vendedor_id: vendedorId });
     }
 
-    if (alvo === 'recorrente') {
+    if (alvo === 'recorrente' && nConquistas.n < 3) {
+      // conquistas recentes: viraram recorrentes nas últimas horas (alimentam "pontos da semana")
+      nConquistas.n++;
+      const ini = horaNoDia(diaDe(H - r.int(20, 35) * DIA_MS), 9, 18);
+      p.cadastro_em = iso(ini - DIA_MS);
+      pedido(p, ini, { autonomo: false });
+      pedido(p, ini + r.int(6, 12) * DIA_MS, { autonomo: r.chance(0.5) });
+      pedido(p, H - nConquistas.n * 2 * 3600000, { autonomo: true });
+    } else if (alvo === 'recorrente') {
       const ini = horaNoDia(diaDe(H - r.int(60, 330) * DIA_MS), 9, 18);
       p.cadastro_em = iso(ini - DIA_MS);
       pedido(p, ini, { autonomo: false });
@@ -293,7 +302,15 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
       v.proxima_acao = { tipo: 'retorno', data_hora: iso(quando.getTime()), confirmada: true };
       Object.assign(p, { status_dia: 'retornar', retorno_sugerido: iso(quando.getTime()), retorno_motivo: 'janela_decisor' });
     } else if (k < 22) {
-      visita(p, ms, { resultado: 'falou_com_decisor', motivo: r.pick(['vai_pensar', 'quer_prazo', 'tem_fornecedor', 'desconfia_app']) });
+      // revisita: primeiro o decisor estava ausente; o retorno foi na janela (ou não) e encontrou o decisor
+      const faixas = p.decisor?.janela?.faixas?.length ? p.decisor.janela.faixas : ['14-17'];
+      const ant = horaNoDia(diaDe(ms - r.int(2, 6) * DIA_MS), 9, 12);
+      visita(p, ant, { resultado: 'aberto_sem_decisor', faixas, dias: [] });
+      const previsto = proximaOcorrencia(new Date(ant + 3600000), faixas, []);
+      const naJanela = r.chance(0.7);
+      const ms2 = naJanela ? previsto.getTime() + r.int(0, 50) * 60000 : diaDe(previsto.getTime()) + r.int(8, 11) * 3600000;
+      const v = visita(p, ms2, { resultado: naJanela ? 'falou_com_decisor' : r.pick(['aberto_sem_decisor', 'falou_com_decisor']), motivo: r.pick(['vai_pensar', 'quer_prazo', 'tem_fornecedor', 'desconfia_app']) });
+      v.retorno_previsto = { quando: previsto.toISOString(), motivo: 'janela_decisor' };
       p.status_dia = 'visitado';
     } else if (k < 29) {
       visita(p, horaNoDia(diaDe(H - r.int(2, 15) * DIA_MS), 9, 17), { resultado: 'recusou', motivo: r.pick(['tem_fornecedor', 'preco', 'nao_icp']) });
