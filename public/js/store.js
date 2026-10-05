@@ -591,6 +591,32 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
       return r;
     },
 
+    // ---------- Descobrir (desconhecidos: Receita fora da carteira, mapa aberto sem CNPJ) ----------
+    descartarDesconhecido(id, motivo) {
+      const d = this.estado.desconhecidos.find((x) => x.id === id);
+      if (!d) return null;
+      Object.assign(d, { status: 'descartado', motivo_descarte: motivo, descartado_em: iso(this.agora()) });
+      this._mudou('desconhecidos', d);
+      this.salvar();
+      return d;
+    },
+    /** Vira ponto da carteira (lead). Mapa aberto e casamento fraco entram marcados para verificar no campo. */
+    adotarDesconhecido(id) {
+      const d = this.estado.desconhecidos.find((x) => x.id === id);
+      if (!d) return null;
+      const p = this.novoPonto({
+        nome_fantasia: d.nome, tipo: d.tipo, cnpj: d.cnpj, mei: d.mei, endereco_cadastral: d.endereco,
+        coord_cadastral: { lat: d.lat, lng: d.lng }, origem: d.grupo === 'mapa_aberto' ? 'mapa_aberto' : 'receita',
+        verificar: d.grupo !== 'receita', ficticio: !!d.ficticio,
+      });
+      p.bairro = d.bairro;
+      Object.assign(d, { status: 'adotado', ponto_id: p.id });
+      this._mudou('desconhecidos', d);
+      this._mudou('pontos', p);
+      this.salvar();
+      return p;
+    },
+
     // ---------- Contatos (WhatsApp) ----------
     registrarContato(pid, { canal = 'whatsapp', modelo_mensagem = null, gerado_pela_plataforma = true } = {}) {
       const c = { id: novoId('ct-'), ponto_id: pid, ts: iso(this.agora()), canal, modelo_mensagem, gerado_pela_plataforma, vendedor_id: this.estado.config.vendedor_id };

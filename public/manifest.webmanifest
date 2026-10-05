@@ -1,7 +1,7 @@
 {
-  "name": "Campo Praso · V1",
-  "short_name": "Campo V1",
-  "description": "Instrumento de pesquisa de campo do case RevOps Praso",
+  "name": "Campo Praso · V2",
+  "short_name": "Campo V2",
+  "description": "Plataforma de campo Praso · protótipo do case RevOps",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,5 +9,12 @@
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
   "lang": "pt-BR",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

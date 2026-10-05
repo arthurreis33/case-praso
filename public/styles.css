@@ -273,7 +273,10 @@ details.bloco { border: 2px solid var(--linha); border-radius: var(--raio); padd
 
 /* ---------- Mapa ---------- */
 .mapa-wrap { position: relative; margin: 0 -16px; }
-#mapa { height: calc(100vh - 56px - var(--abas-h) - 132px); min-height: 320px; background: #e8e8e4; }
+#mapa { height: calc(100vh - 58px - var(--abas-h) - var(--barra-h) - 150px); height: calc(100dvh - 58px - var(--abas-h) - var(--barra-h) - 150px); min-height: 300px; background: #e8e8e4; }
+.leaflet-popup-content .btn.peq { min-height: 40px; color: var(--texto); }
+.leaflet-popup-content a.btn { color: var(--texto); }
+.leaflet-container { font: inherit; }
 .mapa-ctrl { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
 .pino { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--cor); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--texto); }
 .pino b { transform: rotate(45deg); color: #fff; font: 800 13px/1 system-ui, sans-serif; }
