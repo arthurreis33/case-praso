@@ -4,7 +4,7 @@
 // Nomes, endereços, CNPJs e coordenadas são INVENTADOS. Os CNPJs têm dígito verificador errado
 // de propósito, para nunca coincidir com uma empresa real. Nenhum dado de pessoa.
 // Determinístico: a mesma semente gera os mesmos dados, relativos ao "hoje" informado.
-import { PRODUTOS, PERFIL_TIPO } from './dados/catalogo.js';
+import { PRODUTOS, PERFIL_TIPO } from './demo/catalogo.js';
 import { proximaOcorrencia } from './rules.js';
 import { DIA_MS } from './estados.js';
 import { tempos } from './migrar.js';
