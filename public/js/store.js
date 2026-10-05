@@ -652,6 +652,64 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
       this.salvar();
     },
 
+    // ---------- Nota por voz: fila de transcrição e campos sugeridos pela IA ----------
+    registrarAudio(visitaId, { mime, dur_s }) {
+      const v = this.visita(visitaId);
+      if (!v) return null;
+      v.audio = { id: v.id, mime, dur_s, gravado_em: iso(this.agora()) };
+      v.transcricao_status = 'pendente';
+      v.nota_origem = v.nota_texto?.trim() ? 'misto' : 'voz';
+      this._mudou('visitas', v);
+      this.salvar();
+      return v;
+    },
+    /** Resultado da fila: texto transcrito + campos sugeridos (ficam como sugestão até o vendedor confirmar). */
+    registrarTranscricao(visitaId, { status, texto = '', campos = null, modo = null, erro = null }) {
+      const v = this.visita(visitaId);
+      if (!v) return null;
+      v.transcricao_status = status;
+      v.transcricao_modo = modo;
+      v.transcricao_erro = erro;
+      v.transcricao_tentativas = (v.transcricao_tentativas || 0) + 1;
+      if (status === 'ok') {
+        v.transcricao = texto;
+        v.nota_texto = [v.nota_texto?.trim(), texto].filter(Boolean).join('\n');
+        v.ia_sugestao = campos && Object.keys(campos).length ? { campos, em: iso(this.agora()) } : null;
+        v.audio = v.audio ? { ...v.audio, apagado_em: iso(this.agora()) } : null; // o áudio é apagado depois de transcrito
+      }
+      this._mudou('visitas', v);
+      this.salvar();
+      return v;
+    },
+    /** Um toque: aplica o que a IA sugeriu. O que a IA preencheu fica marcado em campos_ia. */
+    aplicarIA(visitaId, campos = this.visita(visitaId)?.ia_sugestao?.campos) {
+      const v = this.visita(visitaId);
+      if (!v || !campos) return null;
+      const t = iso(this.agora());
+      const marcados = [];
+      for (const [k, val] of Object.entries(campos)) {
+        if (k === 'proxima_acao') { v.proxima_acao = { ...val, porque: 'extraída da nota de voz', sugerida: true, confirmada_em: t }; marcados.push(k); continue; }
+        if (k.startsWith('nucleo.') && !v.nucleo.inicio) v.nucleo.inicio = t;
+        if (k.startsWith('pesquisa.')) { if (!v.pesquisa.inicio) v.pesquisa.inicio = t; v.pesquisa.fim = t; }
+        setPath(v, k, val);
+        marcados.push(k);
+      }
+      v.campos_ia = [...new Set([...(v.campos_ia || []), ...marcados])];
+      v.ia_sugestao = null;
+      v.nucleo_por_ia = marcados.some((k) => k.startsWith('nucleo.'));
+      this._mudou('visitas', v);
+      if (v.nucleo.resultado && !v.nucleo.fim) { this.salvarNucleo(v.id); } else { this._aplicarLaco(v); this.reavaliar(v.ponto_id, { causa: 'registro_visita', autor: 'vendedor' }); }
+      this.salvar();
+      return marcados;
+    },
+    descartarIA(visitaId) {
+      const v = this.visita(visitaId);
+      if (!v) return;
+      v.ia_sugestao = null;
+      this._mudou('visitas', v);
+      this.salvar();
+    },
+
     // ---------- Áudio (nota por voz) ----------
     salvarAudio(id, blob) { return ad.salvarAudio(id, blob); },
     lerAudio(id) { return ad.lerAudio(id); },

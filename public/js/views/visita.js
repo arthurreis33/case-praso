@@ -58,7 +58,7 @@ function modeloVisita(store, v, p) {
     <div class="sutil">${r ? `Comprava ${esc(r.top_categorias[0]?.rotulo || '')} (${dinheiro(r.ticket_medio)} por pedido). ${r.parou_de_comprar.length ? `Parou de comprar ${esc(r.parou_de_comprar.map((x) => x.rotulo.toLowerCase()).join(', '))} antes de sair. ` : ''}${esc(sit.prazo?.texto || '')}.` : 'Sem histórico de compras.'}</div></div>`;
 }
 
-export function renderVisita({ main, barra, store, ir }, id) {
+export function renderVisita({ main, barra, store, ir, render }, id) {
   const v = store.visita(id);
   if (!v) return ir('#/hoje');
   const p = store.ponto(v.ponto_id) || { nome_fantasia: '(ponto removido)' };
@@ -297,7 +297,7 @@ export function renderVisita({ main, barra, store, ir }, id) {
   }
 
   tudo();
-  const desmontarVoz = montarGravador?.(main.querySelector('#voz'), store, v, { aoMudar: () => { main.querySelector('textarea[data-campo="nota_texto"]').value = v.nota_texto || ''; tudo(); } });
+  const desmontarVoz = montarGravador(main.querySelector('#voz'), store, v, { aoMudar: () => { if (document.body.contains(main)) render(); } });
   if (v.checkin.lat == null && !v.checkin.gps_erro && !v.checkout) pedirGps();
   const t = setInterval(atualizarRelogio, 15000);
   return () => { clearInterval(t); desmontarVoz?.(); };
