@@ -144,3 +144,5 @@ O **CSV** tem uma linha por visita, com os dados do ponto na mesma linha.
 ## Fora da V1
 
 Login e múltiplos usuários, backend e sincronização, pontuação de aquisição, recorrência e mensagem de WhatsApp, enriquecimento automático (Google Places, Receita), rota otimizada, visão do gestor, mapa embutido e acabamento visual. Tudo isso é candidato à V2.
+#   c a s e - p r a s o  
+ 
