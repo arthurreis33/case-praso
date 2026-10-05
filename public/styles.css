@@ -50,15 +50,15 @@ h3 { font-size: 1rem; margin: 14px 0 6px; }
   position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 6px;
   padding: 6px 12px; background: var(--fundo); border-bottom: 2px solid var(--texto);
 }
-.marca { font-size: 1.05rem; color: var(--texto); text-decoration: none; flex: 1; min-height: 44px; display: flex; align-items: center; min-width: 0; }
+.marca { font-size: 1.05rem; color: var(--texto); text-decoration: none; flex: 1; min-height: 48px; display: flex; align-items: center; min-width: 0; }
 .relogio-sim { font-size: .78rem; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--alerta-fundo); color: var(--alerta); border: 1.5px solid var(--alerta); white-space: nowrap; }
-.status { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; min-width: 44px; justify-content: center; border: 0; background: none; font: inherit; color: var(--texto); padding: 0 4px; }
+.status { display: inline-flex; align-items: center; gap: 4px; min-height: 48px; min-width: 44px; justify-content: center; border: 0; background: none; font: inherit; color: var(--texto); padding: 0 4px; }
 .ponto-status { width: 12px; height: 12px; border-radius: 50%; background: var(--ok); }
 .status.mem .ponto-status { background: var(--erro); }
 .fila-n { font-size: .8rem; font-weight: 800; }
-.btn-sim { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--sutil); }
+.btn-sim { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; color: var(--sutil); }
 .btn-export {
-  min-height: 44px; padding: 0 12px; border: 2px solid var(--texto); border-radius: var(--raio);
+  min-height: 48px; padding: 0 12px; border: 2px solid var(--texto); border-radius: var(--raio);
   background: var(--fundo); color: var(--texto); font: inherit; font-weight: 700; font-size: .95rem;
 }
 
@@ -107,13 +107,13 @@ body.sobreposicao .barra { bottom: 0; padding-bottom: calc(8px + env(safe-area-i
 .btn.primaria { background: var(--primaria); border-color: var(--primaria); color: var(--primaria-txt); }
 .btn.perigo { color: var(--erro); border-color: var(--erro); }
 .btn.grande { min-height: 56px; font-size: 1.02rem; }
-.btn.peq { min-height: 44px; padding: 0 10px; font-size: .92rem; }
+.btn.peq { min-height: 48px; padding: 0 10px; font-size: .92rem; }
 .btn:disabled { opacity: .45; }
 .btn:active { transform: translateY(1px); }
 .pilha { display: flex; flex-direction: column; gap: 10px; }
 .linha-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .linha-btns > .btn { flex: 1 1 0; min-width: 0; }
-.link-btn { background: none; border: 0; color: var(--primaria); font: inherit; font-weight: 700; text-decoration: underline; min-height: 44px; padding: 0 4px; cursor: pointer; }
+.link-btn { background: none; border: 0; color: var(--primaria); font: inherit; font-weight: 700; text-decoration: underline; min-height: 48px; padding: 0 4px; cursor: pointer; }
 
 /* ---------- Chips ---------- */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
@@ -125,7 +125,7 @@ body.sobreposicao .barra { bottom: 0; padding-bottom: calc(8px + env(safe-area-i
 .chips.compacto .chip { min-width: 52px; padding: 0 10px; }
 .chips.rolagem { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
 .chips.rolagem::-webkit-scrollbar { display: none; }
-.chips.rolagem .chip { flex: 0 0 auto; min-height: 44px; font-size: .92rem; }
+.chips.rolagem .chip { flex: 0 0 auto; min-height: 48px; font-size: .92rem; }
 .chip.ia { border-style: dashed; }
 .marca-ia { font-size: .72rem; font-weight: 800; padding: 1px 6px; border-radius: 6px; background: #ece4ff; color: #4b1fa0; margin-left: 4px; }
 
@@ -330,7 +330,7 @@ body.sobreposicao #toast { bottom: calc(var(--barra-h) + 14px + env(safe-area-in
 .linha-c a.corpo-c { flex: 1; min-width: 0; color: var(--texto); text-decoration: none; padding: 6px 0; }
 .linha-c .t { font-weight: 800; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .linha-c .s { font-size: .85rem; color: var(--sutil); display: block; }
-.linha-c .acao-c { flex: 0 0 auto; min-height: 44px; min-width: 64px; border: 2px solid var(--texto); border-radius: var(--raio); background: var(--fundo); font: inherit; font-weight: 800; color: var(--primaria); padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.linha-c .acao-c { flex: 0 0 auto; min-height: 48px; min-width: 64px; border: 2px solid var(--texto); border-radius: var(--raio); background: var(--fundo); font: inherit; font-weight: 800; color: var(--primaria); padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .linha-c .ok-c { font-size: .8rem; color: var(--ok); font-weight: 800; flex: 0 0 auto; }
 .bloco-topo .itens { padding: 0 12px; }
 

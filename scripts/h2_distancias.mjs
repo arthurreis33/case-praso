@@ -1,5 +1,5 @@
 // H2 · "o pino errado é problema de dado, não de mapa".
-// Lê o export JSON da V1, busca o endereço cadastral de cada CNPJ (BrasilAPI), geocodifica
+// Lê o export JSON da V1 ou da V2, busca o endereço cadastral de cada CNPJ (BrasilAPI), geocodifica
 // esse endereço (Nominatim/OpenStreetMap) e mede a distância até o GPS do check-in.
 // Roda no computador, depois do campo, em lote. Fica fora do app de propósito: tira duas
 // integrações externas do caminho crítico da visita.
@@ -14,7 +14,7 @@ const [, , entrada, saida = 'h2_resultado.csv'] = process.argv;
 if (!entrada) { console.error('Uso: node scripts/h2_distancias.mjs export.json [saida.csv]'); process.exit(1); }
 
 const dado = JSON.parse(fs.readFileSync(entrada, 'utf8'));
-const UA = 'praso-campo-v1-h2 (case RevOps; uso pontual)';
+const UA = 'praso-campo-h2 (case RevOps; uso pontual)';
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function enderecoCnpj(cnpj) {
@@ -45,7 +45,7 @@ for (const p of dado.pontos) {
     .sort((a, b) => a.checkin.precisao_m - b.checkin.precisao_m);
   if (!vs.length) continue;
   const g = vs[0].checkin;
-  const l = { ponto_id: p.id, nome: p.nome, cnpj: p.cnpj, gps_lat: g.lat, gps_lng: g.lng, gps_precisao_m: g.precisao_m };
+  const l = { ponto_id: p.id, nome: p.nome_fantasia ?? p.nome, cnpj: p.cnpj, gps_lat: g.lat, gps_lng: g.lng, gps_precisao_m: g.precisao_m };
   try {
     const e = await enderecoCnpj(p.cnpj);
     Object.assign(l, { situacao: e.situacao, endereco_cnpj: e.texto });
@@ -56,7 +56,7 @@ for (const p of dado.pontos) {
     Object.assign(l, { geocode_nivel: c.nivel, cnpj_lat: c.lat, cnpj_lng: c.lng, distancia_m: d, acima_100m: d > 100 ? 'sim' : 'nao' });
   } catch (err) { l.erro = err.message; }
   linhas.push(linhas[0].map((k) => l[k] ?? ''));
-  console.log(`${p.nome}: ${l.distancia_m ?? '–'} m ${l.erro ? `(${l.erro})` : ''}`);
+  console.log(`${p.nome_fantasia ?? p.nome}: ${l.distancia_m ?? '–'} m ${l.erro ? `(${l.erro})` : ''}`);
   await espera(1100);
 }
 const esc = (x) => (/[";\n]/.test(String(x)) ? `"${String(x).replace(/"/g, '""')}"` : String(x));

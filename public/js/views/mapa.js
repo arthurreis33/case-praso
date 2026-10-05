@@ -40,8 +40,8 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
       ${ESTADOS.map(([k, r]) => `<button type="button" class="chip" data-f-estado="${k}" aria-pressed="${ui.estados.has(k)}"><span class="selo-estado e-${k}" style="padding:1px;margin-right:4px"><i>${letraEstado(k)}</i></span>${esc(r)}</button>`).join('')}
     </div>
     <div class="linha-btns" style="margin:4px 0 6px">
-      <select id="f-tipo" aria-label="Filtrar por tipo" style="flex:1;min-height:44px;min-width:0"><option value="">Tipo: todos</option>${TIPOS.map(([k, r]) => `<option value="${k}"${ui.tipo === k ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
-      <select id="f-pontos" aria-label="Filtrar por pontos" style="flex:1;min-height:44px;min-width:0"><option value="">Pontos: todos</option><option value="3"${ui.pontos === '3' ? ' selected' : ''}>3 pt</option><option value="1"${ui.pontos === '1' ? ' selected' : ''}>1 pt</option><option value="0.5"${ui.pontos === '0.5' ? ' selected' : ''}>0,5 pt</option></select>
+      <select id="f-tipo" aria-label="Filtrar por tipo" style="flex:1;min-height:48px;min-width:0"><option value="">Tipo: todos</option>${TIPOS.map(([k, r]) => `<option value="${k}"${ui.tipo === k ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
+      <select id="f-pontos" aria-label="Filtrar por pontos" style="flex:1;min-height:48px;min-width:0"><option value="">Pontos: todos</option><option value="3"${ui.pontos === '3' ? ' selected' : ''}>3 pt</option><option value="1"${ui.pontos === '1' ? ' selected' : ''}>1 pt</option><option value="0.5"${ui.pontos === '0.5' ? ' selected' : ''}>0,5 pt</option></select>
     </div>
     <div class="mapa-wrap"><div id="mapa" role="application" aria-label="Mapa dos pontos"></div></div>
     <div id="mapa-aviso"></div>

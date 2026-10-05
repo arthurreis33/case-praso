@@ -1,8 +1,8 @@
 {
-  "name": "praso-campo-v1",
-  "version": "1.0.0",
+  "name": "praso-campo",
+  "version": "2.0.0",
   "private": true,
-  "description": "V1 da plataforma de campo · instrumento de pesquisa do case RevOps Praso",
+  "description": "Plataforma de campo Praso · V2 · protótipo do case RevOps",
   "type": "module",
   "scripts": {
     "dev": "npx --yes serve public -l 5173",

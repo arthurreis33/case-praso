@@ -143,7 +143,7 @@ export function renderCarteira({ main, barra, store, render }) {
         ${chip('sem_visita', '1', `Sem visita há +${N_SEM_VISITA} d`, ui.semVisita)}${chip('prazo', '1', 'Prazo vencendo', ui.prazo)}
       </div>
       <div class="secao-titulo"><span class="sutil" id="n-res">${res.length} pontos</span>
-        <label class="sutil">Ordenar <select id="ordem" style="min-height:44px;width:auto;padding:4px 8px">
+        <label class="sutil">Ordenar <select id="ordem" style="min-height:48px;width:auto;padding:4px 8px">
           <option value="esperados"${ui.ordem === 'esperados' ? ' selected' : ''}>pontos esperados</option>
           <option value="distancia"${ui.ordem === 'distancia' ? ' selected' : ''}>distância da base</option>
           <option value="prazo"${ui.ordem === 'prazo' ? ' selected' : ''}>dias até o prazo</option>

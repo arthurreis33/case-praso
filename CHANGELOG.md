@@ -1,0 +1,67 @@
+# Changelog
+
+## V2 · 05/10/2026
+
+Construída em fatias, cada uma com testes passando e verificada no Chromium a 360 px (as telas finais também a 412 px). O plano está em `docs/PLANO_V2.md`.
+
+### Fatia 1 · Modelo, estados e simulador
+- Schema 2: ponto com estado e etapa; pedidos, contatos, `EventoEstado` (só acrescenta) e vendedores.
+- Motor de estados puro (`estados.js`): lead, oportunidade, em ativação, recorrente, ativação vencida e churn, com causa e data de cada transição.
+- Persistência em IndexedDB com diário síncrono no localStorage. Fallback em memória.
+- Migração da V1: lê o localStorage da V1 no mesmo domínio ou importa o JSON.
+- Seed fictício de 210 pontos em Boa Viagem, Pina e Imbiribeira, com pedidos coerentes por tipo, churns com histórico rico, ativações perto dos 45 dias, decisores com e sem janela, pontos sem CNPJ e desconhecidos.
+- Simulador: cadastro, pedido autônomo ou assistido, pagamento e relógio (+N dias).
+- Casca com 4 abas (Hoje, Mapa, Carteira, Painel).
+- Testes: 45 dias, 120 dias, retorno de churn, compra autônoma × assistida e idempotência dos eventos.
+
+### Fatia 2 · Carteira e ficha
+- Funil vertical com contagem, taxa de passagem e destaque da etapa onde mais se perde. Tocar numa etapa expande os cards, que mostram o selo "avançou" por alguns segundos.
+- Lista com busca por nome ou CNPJ, filtros (estado, tipo, pontos, sem visita há mais de 14 dias, prazo vencendo) e ordenação (pontos esperados, distância, prazo).
+- Adicionar ponto: BrasilAPI pelo CNPJ (com fallback manual), sem CNPJ ("verificar depois") e deduplicação a 50 m com nome parecido ("é este?").
+- Ficha por estado:
+  - lead: checklist do cadastro e o aviso "prazo depende de análise de crédito";
+  - ativação: 1 de 3 compras e último pedido;
+  - churn: histórico, top 5 itens, o que parou de comprar e o roteiro de reconquista.
+- A ficha tem linha do tempo única e correção manual com confirmação.
+
+### Fatia 3 · Registro de visita
+- Check-in com GPS. A mais de 150 m do pino, pergunta "corrigir o pino para cá?".
+- Núcleo em 3 toques, pré-preenchido com o decisor e a janela já conhecidos.
+- O motivo de não avanço só aparece quando o resultado não é avanço.
+- Próxima ação sugerida com o porquê, confirmada com um toque. Um retorno vai para a lista do dia certo.
+- Modelos por tipo de visita (aquisição, acompanhamento, reconquista). Check-out com os tempos do RF11.
+
+### Fatia 4 · Hoje, priorização e rota
+- Motor de sugestão: `pontos_esperados = pontos_valor × chance_hoje`, com o motivo de cada regra.
+- Roteirizador no cliente: vizinho mais próximo com janelas, 2-opt e inserção mais barata. Considera base, jornada, almoço, funcionamento, janela do decisor, retornos com hora (restrição dura) e duração medida por tipo de visita.
+- Lista "não couberam", com o motivo.
+- Blocos fixos (retornos com hora, recompra vencendo, pontos novos), tirar ou adicionar com recálculo, replanejar a partir da posição atual e rota no Google Maps só por deep link.
+
+### Fatia 5 · Mapa
+- Leaflet/OSM em `vendor/`. Pinos com cor e letra por estado, legenda e filtros.
+- Arrastar pino com confirmação, Click2Create (segurar no mapa ou "Estou aqui"), camada Desconhecidos e fila Descobrir (adicionar à lista ou descartar com motivo).
+- O service worker guarda o Leaflet e um cache limitado de tiles já vistos.
+
+### Fatia 7 · WhatsApp e cesta de entrada
+- Mensagens prontas (recompra repetindo o último pedido, lembrete de 1ª compra e reconquista) por `wa.me` sem número. O `Contato` é gravado sozinho.
+- Cesta de entrada por tipo: de 3 a 5 itens de uma categoria só, do catálogo fictício.
+
+### Fatia 8 · Painéis
+- Vendedor: pontos da semana contra a meta, funil contra o quartil de cima, retornos na janela do decisor e recompras em risco.
+- Gestor: conversão por etapa e por vendedor (mapa de calor com o número na célula) e comportamento (hora, tempo no ponto, retorno na janela, voz, tempo do núcleo, registro no ponto). Mostra também o que os 2 de cima fazem diferente dos 2 de baixo. Equipe fictícia de 5 vendedores mais "Você".
+
+### Fatia 6 · Voz
+- Gravação de até 60 s (MediaRecorder) no IndexedDB, fila de transcrição com status visível no topo e reprocessamento quando volta o sinal.
+- `api/transcrever.js`: transcrição e extração por LLM, com chave só no servidor e validação contra o catálogo.
+- A IA sugere e o vendedor confirma com um toque. Campos preenchidos pela IA ficam marcados, e o áudio é apagado depois de transcrito.
+- Modo demonstração sem chave: texto de exemplo e extração por regras no aparelho.
+
+### Fechamento
+- README com as decisões e os trade-offs, as premissas e o roteiro da demo.
+- Export compatível com a V1, com "Compartilhar CSV".
+- Script de H2 lendo o export da V2.
+- Verificação a 360 e a 412 px (sem rolagem horizontal, alvos ≥ 48 px, botões com rótulo), teste offline (abre, registra visita, mapa com pinos, persiste) e migração da V1 no navegador.
+
+### Não feito
+- Fatia 9 (cruzamento Receita + Overture): fica como proposta documentada.
+- Teste em Android real e Safari do iPhone.

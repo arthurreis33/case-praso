@@ -1,148 +1,160 @@
-# Campo Praso · V1
+# Campo Praso · V2
 
-V1 da plataforma de campo do case RevOps da Praso. Arthur Aragão, outubro de 2026.
+Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outubro de 2026.
 
-## O que é e por que existe
+## O que o app faz
 
-A V1 é o meu **instrumento de pesquisa de campo** e o primeiro teste das hipóteses sobre o vendedor. Quem usa sou eu, visitando de 8 a 10 estabelecimentos em Recife como se fosse vendedor da Praso.
+1. Monta o dia do vendedor: de 8 a 12 pontos em ordem de rota, com a hora prevista e o porquê de cada um ("Vale 3 pt · decisor costuma estar das 14h às 17h · 2/3 compras").
+2. Registra a visita em até 3 toques. Cada registro muda a tela de amanhã: retorno na janela do decisor, próxima ação, pino corrigido.
+3. Move o ponto no funil de 6 etapas **só por evento** (visita, cadastro, pedido, tempo). Ninguém arrasta card.
+4. Mostra a ficha que o Salesforce não tem: estado, pontos, prazo dos 45 dias, decisor, histórico de compras e linha do tempo.
+5. Funciona offline e com uma mão, e mostra o funil do vendedor contra o quartil de cima.
 
-Ela não é o protótipo final do case. O protótipo final é a V2, construída depois do campo com o que eu aprender na rua. A V1 tem três exigências:
+**Link:** `praso-campo-v1.vercel.app` (o mesmo domínio da V1; a V2 migra sozinha os dados do aparelho).
 
-- ser rápida de construir (timebox de 3 a 4 horas);
-- ser confiável na rua: funcionar offline, com uma mão e no sol;
-- usar **o mesmo modelo de dados da V2**, para que o dado de campo vire a base real da V2.
+## Como rodar
 
-O que a V1 testa:
+```bash
+npm test          # 61 testes, sem dependências (node --test)
+npm run dev       # serve public/ em http://localhost:5173
+```
 
-| Hipótese | Requisitos | O que a V1 mede |
-| --- | --- | --- |
-| **H1** · o vendedor só registra se o registro devolver algo para ele | RF06, RF10, RF11 | Tempo do núcleo de 3 toques e se ele foi salvo no ponto ou depois |
-| **H2** · o pino errado no mapa é problema de dado, não de mapa | RF05, RF12, script | Distância entre o endereço do CNPJ e o GPS do check-in |
-| **H3** · registrar por voz é melhor que preencher formulário | RF08, RF11 | Chip "registrei por voz ou digitação" e legibilidade das notas |
-| **Tese do laço** · o registro de hoje muda o dia seguinte | RF06, RF10 | Revisitas, desvio em relação ao horário sugerido e se o decisor estava |
-| **H4, H5, H6** · o lado do comprador | RF07 | Pagamento, número de fornecedores, canal e frequência de compra (só registra) |
+GPS e microfone só funcionam em HTTPS ou em `localhost`. No celular, use o link publicado.
 
-## Fluxo
+**Publicar:** cada envio ao GitHub publica na Vercel. O `vercel.json` publica `public/` sem build e sobe a função `api/transcrever.js`. A cada deploy, troque `VERSAO` em `public/sw.js`. O service worker serve do cache, e a versão nova aparece no segundo carregamento.
 
-1. **Lista do dia:** pontos em três seções. "Retornar" vem primeiro, ordenado pelo horário sugerido. Cada cartão tem um botão "Rota", que abre o Google Maps.
-2. **Cadastrar ponto:** antes de sair, pela lista. Na rua, use "+ Ponto aqui", que cria o ponto a partir do GPS e já faz o check-in.
-3. **Check-in:** a visita é criada na hora. A posição GPS e a precisão em metros são gravadas quando chegam, e nada espera o GPS.
-4. **Observação** (antes de entrar), seguida do **registro em 3 toques**: resultado, quem decide e quando o decisor está. Há também um chip para a versão da conversa. Depois, toque em "Salvar registro".
-5. **Pesquisa** (opcional): as perguntas 1 a 8, na ordem exata do roteiro de campo.
-6. **Check-out:** depois dele, a visita continua editável. Ainda falta preencher "o que me surpreendeu aqui" e o chip de voz ou digitação.
-7. **Laço:** se o decisor não estava e a janela dele foi registrada, ou se houve um melhor horário combinado no fechamento, o ponto vai sozinho para "Retornar". O horário sugerido é a próxima ocorrência da janela.
-8. **Exportar:** o botão fica sempre no topo. Gera CSV (uma linha por visita) e JSON (tudo). A regra é exportar ao fim de cada dia de campo.
+**Transcrição real (opcional):** defina `OPENAI_API_KEY` nas variáveis de ambiente do projeto na Vercel. Também dá para ajustar os modelos com `TRANSCRICAO_MODELO` (padrão `whisper-1`) e `EXTRACAO_MODELO` (padrão `gpt-4o-mini`). Sem chave, o app entra no **modo demonstração**. A chave nunca vai para o cliente.
 
-## Decisões e trade-offs
+## Demonstração em 3 minutos (simulador)
 
-**1. Registro em dois blocos.** O núcleo de 3 toques é o que o vendedor da Praso faria, e o tempo dele é medido à parte. O bloco de pesquisa é opcional e serve ao case.
-- *Ganho:* o teste de H1 não é contaminado pelo questionário.
-- *Custo:* a tela fica longa. Por isso a pesquisa vem recolhida e o núcleo fica num cartão em destaque.
-- *Detalhe:* "quem decide" aparece só no núcleo. A pergunta 2 do roteiro registra apenas quem paga e quem recebe, para não duplicar o campo.
+Quem abre o link pela primeira vez já encontra 210 pontos fictícios em Boa Viagem, Pina e Imbiribeira. O **simulador** fica no ícone de engrenagem do topo.
 
-**2. Voz sem código.** O ditado do teclado do Android já funciona em qualquer campo de texto, então a V1 só tem textos e o chip de voz ou digitação. Não usa a Web Speech API.
-- *Ganho:* zero integração e nada que quebre offline.
-- *Custo:* não há transcrição estruturada por IA. Isso fica para a V2, se H3 sobreviver ao barulho de cozinha.
-- *Detalhe:* acrescentei a opção "os dois", porque na prática as notas misturam ditado e digitação.
+1. **Hoje:** veja os três blocos fixos (retornos com hora, recompra vencendo, pontos novos) e a lista do dia com motivo e hora prevista. Toque em "Tirar" num ponto: a rota é recalculada. Depois da jornada, o Hoje mostra o plano de amanhã.
+2. **Visita:**
+   - Abra um lead e faça o check-in.
+   - Marque "Falou com decisor". O decisor e a janela já vêm do ponto, quando conhecidos.
+   - Veja a próxima ação sugerida, com o porquê, e confirme com um toque.
+   - Grave uma nota de voz: no modo demonstração, a IA sugere os campos e você confirma com um toque.
+3. **Cadastro detectado:**
+   - Ainda na visita, toque em "simular cadastro feito (demo)" e dispare **Cadastro feito**.
+   - Volte à Carteira, no modo Funil. O card está na etapa 4, com o selo "avançou: cadastro detectado".
+4. **Relógio:**
+   - No simulador, escolha um ponto em ativação, dispare **Pedido assistido** e depois **Pedido autônomo** duas vezes: ele vira Recorrente e soma pontos no Painel.
+   - Toque em **+46 dias**: os pontos em ativação sem a 3ª compra autônoma viram "Ativação vencida".
+   - Toque em **+30** algumas vezes: quem passa de 120 dias sem comprar vira "Oportunidade (churn)".
+5. **Ficha de churn:** histórico de compras, top 5 itens, o que ele parou de comprar e o roteiro de reconquista, que começa pela categoria que mais comprava.
+6. **Mapa:**
+   - Segure um pino para arrastá-lo e confirme.
+   - Segure no mapa para criar um ponto ali.
+   - Ligue a camada "Desconhecidos".
+7. **Painel:** os pontos da semana contra a meta, o funil contra o quartil de cima e, na "Visão gestor", o que os que convertem o dobro fazem diferente.
 
-**3. H2 fora do app.** O app grava o CNPJ (opcional) e o GPS do check-in, sem geocodificar endereço. A comparação é feita depois, em lote, por `scripts/h2_distancias.mjs`.
-- *Ganho:* tira duas APIs externas (Receita e geocodificador) do caminho crítico da visita.
-- *Custo:* o achado só aparece depois do campo.
+Em produção, cadastro, pedido e pagamento viriam da **integração com o sistema de pedidos**. O simulador existe para mostrar que o card se move sozinho.
 
-**4. A entidade central é o ponto físico com estado.** O ponto tem estado no funil (lead, oportunidade, cliente, churn), e as visitas ficam penduradas nele por `ponto_id`. Não existe "lead que vira conta". É a principal descoberta da auditoria do Salesforce e é o modelo da V2.
-- Refinos sobre a proposta inicial:
-  - "quem decide" e a janela do decisor também ficam no ponto, com o valor da última visita, porque são atributos do lugar e a V2 lê sem varrer visitas;
-  - o ponto guarda o motivo do retorno (janela do decisor ou horário combinado);
-  - o pino do ponto passa a ser o do check-in (`coord_fonte`);
-  - a visita guarda `retorno_previsto`, para medir se a revisita no horário sugerido encontrou o decisor.
+## Decisões de produto e seus trade-offs
 
-**5. Offline-first, com localStorage em vez de IndexedDB.** Cada toque grava o estado inteiro no aparelho, de forma síncrona.
-- *Ganho:* o dado está salvo no instante do toque, e fechar a aba logo depois não perde nada. O volume de campo (dezenas de visitas) é minúsculo.
-- *Custo:* o limite fica em torno de 5 MB e a gravação reescreve o estado inteiro. É irrelevante na V1 e deve ser trocado na V2, quando houver backend.
-- *Robustez:* toda leitura e escrita tem try/catch. Sem armazenamento, o app segue em memória e avisa em vermelho. Um JSON corrompido não é descartado (fica uma cópia guardada). O app também pede `navigator.storage.persist()` e permite importar um backup JSON.
+**1. Cards movidos só por evento.** O estado e a etapa saem de uma função pura (`estados.js`) que lê cadastro, pedidos, visitas e o relógio. Cada mudança grava um `EventoEstado` com a causa, e nada é apagado.
+- *Ganho:* o funil é verdade, e não opinião. O vendedor não perde tempo arrastando card, e o gestor vê por que o ponto mudou.
+- *Custo:* um erro de registro não se resolve arrastando. A única exceção é a **correção manual** de um registro errado, que exige confirmação, grava `correcao_manual` e não conta como avanço. Ela corrige a entrada (o resultado da visita ou o estado declarado de um ponto sem histórico), e o motor recalcula a partir daí.
 
-**6. Privacidade.** O app não coleta nome nem telefone pessoal do dono. Dados reais nunca vão para o repositório: o `.gitignore` bloqueia `*.csv` e os exports, e os exemplos são fictícios e removíveis num toque.
+**2. Leaflet + OpenStreetMap em vez do Google.**
+- *Ganho:* os termos do Google Places proíbem usar o conteúdo dele em mapa que não seja do Google e limitam o cache a `place_id` e a 30 dias de coordenadas. Com OSM, o pino corrigido é nosso e fica para sempre. O Leaflet fica em `public/vendor`, então o mapa abre offline com os pinos.
+- *Custo:* tiles do OSM têm menos detalhe comercial que o Google. Sem rede, só aparecem os tiles já vistos. O Google continua como deep link de navegação: "Abrir rota no Maps" passa as paradas para a navegação por voz.
 
-**7. Stack: HTML, CSS e JS puros, sem framework e sem build.** Foram cogitados React e Node.
-- Na V1, o que pode dar errado na rua é perder registro, travar sem sinal ou ficar lento, e um framework não resolve nenhum dos três.
-- Um framework acrescentaria build e plugin de service worker, que é a parte mais fácil de quebrar offline.
-- O Node entrou onde aumenta a robustez: nos testes automáticos (`node --test`) e no script de H2.
-- React faz sentido na V2, quando entram a visão do gestor, a recorrência e a pontuação.
+**3. Heurística em vez de solver de rota.** Vizinho mais próximo respeitando janelas, ponderado pelos pontos esperados, seguido de uma passada 2-opt e de inserção mais barata do que sobrou (`rota.js`).
+- *Ganho:* roda no celular, offline, em milissegundos, sem API paga. Para 15 pontos por dia, a diferença para o ótimo é pequena.
+- *Custo:* não garante o ótimo e usa distância em linha reta × 1,4 de tortuosidade, não ruas reais. A interface `planejar(entrada) → saída` permite trocar por VROOM/OSRM sem mudar a tela.
 
-**8. Mapa embutido (RF04) não entrou.** Os tiles do OpenStreetMap exigem rede, então o mapa não funcionaria justamente no modo avião, e o link "Rota" para o Google Maps já resolve a navegação.
-- *Custo:* não há visão espacial do dia dentro do app.
-- É candidato à V2, junto com a rota otimizada.
+**4. Regras em vez de modelo.** `pontos_esperados = pontos_valor × chance_hoje`, com multiplicadores transparentes num arquivo só (`config.js`). Cada regra devolve o texto do motivo.
+- *Ganho:* o vendedor entende e confia, porque toda sugestão diz o porquê. O gestor ajusta um número sem cientista de dados.
+- *Custo:* os pesos são palpites até haver histórico. Um modelo só faz sentido depois de meses de visitas registradas, e é exatamente isso que o app passa a produzir.
 
-**Medição (RF11).** Os horários são gravados brutos, e as durações saem calculadas no export.
-- **Tempo no ponto:** do check-in ao check-out.
-- **Tempo do núcleo:** do primeiro toque do núcleo até "Salvar registro". O chip de versão da conversa não conta.
-- **Tempo da pesquisa:** do primeiro ao último toque no bloco. É quase o tempo da conversa, não o tempo de registro, então serve ao diário de bordo e não entra como evidência de H1.
-- **`nucleo_salvo_no_ponto`:** indica se o núcleo foi salvo antes do check-out. É o "feito no ponto, e não depois" de H1.
+**5. Nota de voz do vendedor, e não gravação da conversa.** O vendedor grava até 60 s ao sair do ponto. A transcrição entra numa fila, a IA sugere os campos e ele confirma com um toque. O áudio é apagado depois de transcrito.
+- *Ganho:* não grava o dono (LGPD e confiança) e evita o barulho de cozinha. O que a IA preencheu fica marcado com "IA" e nunca sobrescreve o que o vendedor marcou.
+- *Custo:* depende da memória do vendedor. O ditado do teclado continua valendo para quem preferir.
+
+**6. Offline-first sem backend.**
+- *Persistência:* IndexedDB para tudo, com um diário síncrono no localStorage. Cada toque grava antes no diário, de forma síncrona, e depois numa transação curta do IndexedDB. Se a aba fechar no meio, a próxima abertura reaplica o diário. Sem IndexedDB, o app segue em memória e avisa em vermelho.
+- *Ganho:* nada no fluxo de visita espera a rede, e o dado está salvo no instante do toque.
+- *Custo:* não há sincronização entre aparelhos nem visão real do gestor. O export JSON/CSV é o backup, e o app avisa quantas visitas existem desde o último export.
+
+**7. Simulador no lugar da integração.**
+- *Ganho:* a banca vê a regra "nenhum card é movido à mão" acontecer, inclusive com o tempo, sem depender do sistema da Praso.
+- *Custo:* os eventos são disparados à mão. Tudo o que é simulado aparece marcado: o selo do relógio no topo, "demonstração" na IA e "fictício" nos dados.
+
+**Outras decisões:**
+- **A plataforma só pede o que não sabe.** Decisor e janela já registrados no ponto vêm pré-preenchidos na visita. Nesse caso, o registro costuma ser um toque só (o resultado).
+- **"Ponto fechado" e não "Fechado".** A chave `fechado` da V1 quer dizer *estabelecimento fechado*. Sem a troca de rótulo, a banca leria "Fechado" como venda.
+- **Plano de amanhã à noite.** A partir de 1h30 antes do fim da jornada, o Hoje mostra o plano do dia seguinte. Quem abrir o link à noite vê um plano, e não uma lista vazia.
+- **Retorno combinado vale mais que o horário padrão do tipo.** O horário de funcionamento registrado é regra. O padrão do tipo é palpite e perde para o que o vendedor combinou ou registrou.
+- **Stack mantida:** HTML, CSS e JS puros, sem build. Nada obrigatório exigiu React, e um build acrescentaria risco ao service worker, a parte mais fácil de quebrar offline.
+
+## Premissas a validar com o gestor
+
+| Premissa | Como está no app | Onde muda |
+|---|---|---|
+| Os 45 dias contam desde a 1ª compra do ciclo | Sim; depois do churn, uma compra reinicia o ciclo | `config.js → ciclo` |
+| "Autônoma" = pedido sem a flag de assistido | A 3ª compra do ciclo (ou uma posterior) precisa ser autônoma; se a 3ª for assistida, o ponto espera a próxima autônoma dentro do prazo | `estados.js` |
+| Critério de alto potencial | Não MEI e tipo de alto consumo (restaurante, hamburgueria, pizzaria, lanchonete) | `config.js → alto_potencial` |
+| Pedido do app chega sozinho ao sistema | Sim (é o que o simulador imita) | integração |
+| "Conquistado" para a pontuação | Quando vira recorrente, porque a meta é recorrência e não cadastro | `config.js → conquista_em` |
+| Ativação vencida que volta a comprar | Continua vencida até completar 120 dias sem comprar (vira churn) | `estados.js` |
+| Pedido via WhatsApp conta como autônomo? | Hoje, só a flag decide | integração |
 
 ## Estrutura
 
 ```
-public/                 o app (é o que vai ao ar)
+public/                     o app (é o que vai ao ar)
   index.html, styles.css, sw.js, manifest.webmanifest, icon.svg
-  js/catalogo.js        opções dos chips (chave vai ao export, rótulo vai à tela)
-  js/rules.js           regras puras: próxima janela (RF10), durações (RF11), distância
-  js/store.js           modelo de dados, persistência, laço de retorno, schema_version
-  js/export.js          CSV e JSON (RF12)
-  js/geo.js, js/ui.js   GPS e utilitários de tela
-  js/views/             lista do dia, ponto (cadastro e ficha), visita
-  js/seed.js            dados fictícios de exemplo
-tests/                  node --test: regras, store e export
-scripts/h2_distancias.mjs   teste de H2 em lote a partir do export JSON
+  vendor/leaflet/           Leaflet 1.9.4 (BSD-2)
+  js/config.js              TODAS as regras ajustáveis (pesos, picos, janelas, limiares, ciclo)
+  js/estados.js             motor de estados e etapas (função pura)
+  js/prioridade.js          motor de sugestão: pontos esperados + motivo
+  js/rota.js · plano.js     roteirizador com janelas · plano do dia
+  js/store.js · db.js       modelo de dados, EventoEstado, IndexedDB + diário
+  js/migrar.js              V1 → V2 (localStorage da V1 ou export JSON)
+  js/voz.js · extrair.js    gravação, fila, transcrição, extração e modo demonstração
+  js/whatsapp.js            mensagens prontas e cesta de entrada
+  js/painel.js              métricas do vendedor e do gestor (equipe fictícia)
+  js/seed.js · demo/        dados e catálogo fictícios
+  js/views/                 hoje, mapa, carteira, ficha, visita, novo, painel, sim, descobrir
+api/transcrever.js          função serverless: transcrição + extração por LLM (chave só no servidor)
+tests/                      node --test: estados, rota, prioridade, store, migração, export, voz
+scripts/h2_distancias.mjs   H2 em lote a partir do export JSON (V1 ou V2)
+docs/                       PLANO_V2.md e a proposta do cruzamento Receita + Overture
 ```
 
-## Como rodar e publicar
+## Modelo de dados (schema 2)
 
-Para usar no computador:
+A entidade central é o **Ponto**, com estado e etapa. Visitas, pedidos, contatos e eventos ficam pendurados nele por `ponto_id`, e o histórico nunca se perde quando o estado muda.
 
-```bash
-npm test                 # 29 testes, sem dependências
-npm run dev              # serve public/ em http://localhost:5173
-```
+- **Ponto:** CNPJ, razão social, nome fantasia, tipo, MEI e `pontos_valor` (calculado: MEI 0,5, não MEI 1, alto potencial 3). Tem endereço e coordenada cadastral, e uma `coord_confirmada`: a do check-in ou a do pino arrastado, que sempre prevalece. Guarda também horário de funcionamento, decisor (`papel` e `janela` em faixas e dias), quem paga, estado, etapa e origem.
+- **Visita:** tipo (aquisição, acompanhamento ou reconquista), check-in com GPS, precisão e distância até o pino. Tem o núcleo (resultado, quem decide, janela, com início e fim para o RF11), motivo, próxima ação, nota (texto, origem e status da transcrição), `campos_ia`, pesquisa, surpresa e tempos.
+- **Pedido** (sistema; no protótipo, seed e simulador): data, valor, itens, forma de pagamento e `autonomo`.
+- **Contato:** gravado sozinho quando o vendedor toca em WhatsApp.
+- **EventoEstado:** dimensão (estado ou etapa), de, para, causa e autor. Só acrescenta registros, nunca apaga.
+- **Vendedor:** base, jornada com almoço e meta de pontos da semana.
 
-O GPS só funciona em HTTPS ou em `localhost`. Para testar no celular, use o link publicado.
+**Migração:** na primeira abertura no mesmo domínio, a V2 lê a chave `praso_campo_v1`, migra e guarda no IndexedDB. A chave da V1 fica intacta. "Importar backup" aceita JSON da V1 e da V2. Campos da V1 sem par na V2 ficam com o sufixo `_v1`.
 
-**Publicar na Vercel**, por qualquer um destes caminhos:
+**Export:** o JSON traz o estado completo (`schema_version: 2`). O CSV tem uma linha por visita: as 55 colunas da V1 vêm primeiro, com os mesmos nomes e na mesma ordem, e as da V2 (`v2_*`) vêm depois. Atenção: `ponto_estado` passa a usar os 6 estados da V2. Há "Compartilhar CSV" e "Compartilhar JSON" no menu do sistema.
 
-- **CLI:** na pasta do repositório, rode `npx vercel --prod`. Na primeira vez, ela pede login e cria o projeto.
-- **GitHub:** suba o repositório e importe em vercel.com/new. O `vercel.json` já define que não há build e que a pasta publicada é `public`.
+**H1 e H2 sem campo extra:**
+- O tempo do núcleo (H1) é medido do primeiro toque até salvar.
+- A distância entre o pino cadastral e o GPS do check-in (H2) vai para `v2_checkin_distancia_pino_m`.
+- Com o endereço real do CNPJ, `scripts/h2_distancias.mjs` faz a medida em lote.
 
-**Atualizar:** troque `VERSAO` em `public/sw.js` a cada deploy. O service worker serve do cache e baixa a versão nova em segundo plano, então ela aparece no segundo carregamento.
+## Privacidade
 
-**Teste de H2 depois do campo** (precisa de internet):
+- O app não coleta nome nem telefone pessoal do dono. O WhatsApp abre sem número, e o vendedor escolhe o contato no próprio aparelho.
+- O repositório só tem dados fictícios. Os CNPJs do seed têm dígito verificador errado de propósito. O `.gitignore` bloqueia `*.csv`, os exports e `dados/`.
+- O áudio atravessa a função serverless sem ser guardado e é apagado do aparelho depois de transcrito.
 
-```bash
-node scripts/h2_distancias.mjs praso-campo-AAAAMMDD-HHMM.json h2_resultado.csv
-```
+## Fora do escopo (e próximos passos)
 
-O script usa a BrasilAPI para buscar o endereço do CNPJ e o Nominatim (OpenStreetMap, 1 requisição por segundo) para geocodificar. O resultado tem a distância em metros e a coluna `acima_100m`.
-
-## Dados fictícios
-
-Para conhecer o app, use Exportar → Mais opções → "Carregar pontos fictícios de exemplo". Ele cria seis pontos inventados ("Lanchonete Exemplo A" a "Bar Exemplo F"), com ruas fictícias no "Bairro Exemplo" e coordenadas aproximadas do centro do Recife, só como referência. Uma visita de exemplo mostra o laço: decisor ausente e janela das 6h às 9h, então o ponto aparece em "Retornar" no próximo horário das 6h. O CNPJ de exemplo, 99.999.999/0001-99, é inválido de propósito.
-
-Para apagar tudo isso, use "Remover pontos fictícios". Os dados reais não são tocados.
-
-## Formato do export
-
-O **JSON** é o estado completo:
-
-```json
-{ "schema_version": 1, "exportado_em": "...", "pontos": [ ... ], "visitas": [ ... ] }
-```
-
-O **CSV** tem uma linha por visita, com os dados do ponto na mesma linha.
-- Separador `;` e BOM UTF-8, para abrir direto no Excel em português. O Google Sheets detecta o separador sozinho.
-- Listas aparecem separadas por `|`.
-- Horários estão em hora local, e durações em segundos.
-- Pontos sem visita não geram linha no CSV, mas estão no JSON.
-
-## Fora da V1
-
-Login e múltiplos usuários, backend e sincronização, pontuação de aquisição, recorrência e mensagem de WhatsApp, enriquecimento automático (Google Places, Receita), rota otimizada, visão do gestor, mapa embutido e acabamento visual. Tudo isso é candidato à V2.
-#   c a s e - p r a s o  
- 
+- Login real e múltiplos usuários. O vendedor é fixo e a visão de gestor é um seletor.
+- Backend e sincronização entre aparelhos.
+- Integração real com pedidos e crédito (fica no simulador).
+- Google Places, solver de rota externo e modelo preditivo.
+- **Cruzamento Receita + Overture** (fatia opcional): ficou como proposta em `docs/PIPELINE_RECEITA_OVERTURE.md`. No protótipo, a fila Descobrir usa desconhecidos fictícios.
+- **Ainda não testado:** Android real, Safari do iPhone (MediaRecorder grava em `audio/mp4`) e a chamada real da transcrição com chave.
