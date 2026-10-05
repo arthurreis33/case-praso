@@ -449,7 +449,13 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
         retorno_previsto: p.status_dia === 'retornar' && p.retorno_sugerido ? { quando: p.retorno_sugerido, motivo: p.retorno_motivo } : null,
         versao_conversa: null,
         observacao: [],
-        nucleo: { resultado: null, quem_decide: null, faixas: [], dias: [], inicio: null, fim: null, editado_em: null },
+        // a plataforma só pede o que não sabe: decisor e janela já conhecidos vêm do ponto (não contam toque)
+        nucleo: {
+          resultado: null, quem_decide: p.decisor?.papel || null,
+          faixas: [...(p.decisor?.janela?.faixas || [])], dias: [...(p.decisor?.janela?.dias || [])],
+          prefill: !!(p.decisor?.papel || p.decisor?.janela?.faixas?.length),
+          inicio: null, fim: null, editado_em: null,
+        },
         motivo_nao_avanco: null,
         proxima_acao: null,
         pesquisa: { inicio: null, fim: null },
@@ -539,6 +545,23 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
       return v;
     },
 
+    /** Próxima ação confirmada pelo vendedor (um toque). Um retorno com hora muda a lista do dia certo. */
+    confirmarProximaAcao(visitaId, pa) {
+      const v = this.visita(visitaId);
+      if (!v) return null;
+      v.proxima_acao = pa ? { tipo: pa.tipo, data_hora: pa.data_hora || null, porque: pa.porque || null, sugerida: !!pa.sugerida, confirmada_em: iso(this.agora()) } : null;
+      this._mudou('visitas', v);
+      this._aplicarLaco(v);
+      this.salvar();
+      return v.proxima_acao;
+    },
+
+    /** Cadastro detectado entre o check-in e agora (no protótipo, vem do simulador). */
+    cadastroNaVisita(v) {
+      const p = this.ponto(v.ponto_id);
+      return !!(p?.cadastro_em && p.cadastro_em >= v.checkin.em && (!v.checkout || p.cadastro_em <= v.checkout.em));
+    },
+
     /** RF10 · o registro de hoje muda o dia seguinte (retorno com hora). */
     _aplicarLaco(v) {
       const p = this.ponto(v.ponto_id);
@@ -546,9 +569,15 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
       const ultima = this.visitasDo(p.id)[0];
       if (ultima && ultima.id !== v.id) return null;
       const ref = new Date(v.checkout?.em || v.nucleo.fim || this.agora());
-      let r = calcularRetorno(v, ref);
-      // V2: a próxima ação confirmada pelo vendedor também agenda o retorno
-      if (!r && v.proxima_acao?.tipo === 'retorno' && v.proxima_acao.data_hora) r = { quando: new Date(v.proxima_acao.data_hora), motivo: 'proxima_acao' };
+      // V2: a próxima ação confirmada pelo vendedor manda; sem ela, vale o laço da V1 (janela / melhor horário)
+      let r;
+      if (v.proxima_acao?.confirmada_em) {
+        r = v.proxima_acao.tipo === 'retorno' && v.proxima_acao.data_hora
+          ? { quando: new Date(v.proxima_acao.data_hora), motivo: v.nucleo.resultado === 'aberto_sem_decisor' && v.nucleo.faixas?.length ? 'janela_decisor' : 'proxima_acao' }
+          : null;
+      } else {
+        r = calcularRetorno(v, ref);
+      }
       if (r) {
         p.status_dia = 'retornar';
         p.retorno_sugerido = iso(r.quando);
