@@ -1,4 +1,5 @@
-// Utilitários de interface: escape, chips, formatação de hora, toast.
+// Utilitários de interface: escape, chips, formatação de hora, toast, selos.
+import { ESTADOS, FAIXAS, DIAS, QUEM_DECIDE, rotulo } from './catalogo.js';
 
 export const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -75,7 +76,78 @@ export function toast(msg, ms = 2600) {
   toastTimer = setTimeout(() => el.classList.remove('on'), ms);
 }
 
+/** Google entra só como deep link de navegação (seção 6.4). Usa a coordenada confirmada, se houver. */
 export function mapsUrl(p) {
-  const dest = p.lat != null && p.lng != null ? `${p.lat},${p.lng}` : p.endereco || p.nome;
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+  const c = p.coord_confirmada || p.coord_cadastral || (p.lat != null ? { lat: p.lat, lng: p.lng } : null);
+  const dest = c ? `${c.lat},${c.lng}` : p.endereco_cadastral || p.endereco || p.nome_fantasia || p.nome;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+}
+
+/** Rota com várias paradas (Google aceita até 9 waypoints no link; o resto vai em links seguintes). */
+export function mapsRotaUrl(paradas, origem = null) {
+  const c = (p) => { const x = p.coord_confirmada || p.coord_cadastral; return x ? `${x.lat},${x.lng}` : null; };
+  const pts = paradas.map(c).filter(Boolean).slice(0, 10);
+  if (!pts.length) return null;
+  const destino = pts.at(-1);
+  const meio = pts.slice(0, -1);
+  const u = new URL('https://www.google.com/maps/dir/');
+  u.searchParams.set('api', '1');
+  if (origem) u.searchParams.set('origin', `${origem.lat},${origem.lng}`);
+  u.searchParams.set('destination', destino);
+  if (meio.length) u.searchParams.set('waypoints', meio.join('|'));
+  u.searchParams.set('travelmode', 'driving');
+  return u.toString();
+}
+
+// ---------------- V2 ----------------
+
+const LETRA = { lead: 'L', cadastrado_sem_compra: 'O', ativacao: 'A', recorrente: 'R', ativacao_vencida: 'V', churn: 'C' };
+export const letraEstado = (e) => LETRA[e] || '?';
+export const rotuloEstado = (e) => rotulo(ESTADOS, e);
+
+/** Selo de estado: cor + letra + rótulo (nada depende só de cor). */
+export function seloEstado(e) {
+  return `<span class="selo-estado e-${esc(e)}"><i aria-hidden="true">${letraEstado(e)}</i>${esc(rotuloEstado(e))}</span>`;
+}
+
+export function seloPontos(n, { esperados = false } = {}) {
+  const t = String(Math.round(n * 100) / 100).replace('.', ',');
+  return esperados
+    ? `<span class="pontos esperados" title="pontos esperados hoje">≈${t} pt</span>`
+    : `<span class="pontos" title="pontos de aquisição">${t} pt</span>`;
+}
+
+/** "Dono · 14h–17h · seg a sex" */
+export function janelaTexto(decisor, { comPapel = true } = {}) {
+  if (!decisor) return '';
+  const partes = [];
+  if (comPapel && decisor.papel) partes.push(rotulo(QUEM_DECIDE, decisor.papel));
+  const j = decisor.janela || {};
+  if (j.faixas?.length) partes.push(j.faixas.map((f) => rotulo(FAIXAS, f)).join(', '));
+  if (j.dias?.length) partes.push(diasTexto(j.dias));
+  return partes.join(' · ');
+}
+
+export function diasTexto(dias) {
+  const s = new Set((dias || []).map(String));
+  if (['1', '2', '3', '4', '5'].every((d) => s.has(d)) && s.size === 5) return 'seg a sex';
+  if (['1', '2', '3', '4', '5', '6'].every((d) => s.has(d)) && s.size === 6) return 'seg a sáb';
+  return DIAS.filter(([v]) => s.has(v)).map(([, r]) => r.toLowerCase()).join(' ');
+}
+
+export const dinheiro = (v) => (v == null ? '–' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }));
+export const data = (iso) => { if (!iso) return ''; const d = new Date(iso); return `${z(d.getDate())}/${z(d.getMonth() + 1)}/${String(d.getFullYear()).slice(2)}`; };
+export const pct = (x) => (x == null || Number.isNaN(x) ? '–' : `${Math.round(x * 100)}%`);
+
+/** Diálogo de confirmação (usado pela correção manual e pelo pino). Devolve Promise<boolean>. */
+export function confirmar(titulo, texto, rotuloSim = 'Confirmar') {
+  const dlg = document.getElementById('dlg-confirmar');
+  document.getElementById('confirmar-titulo').textContent = titulo;
+  document.getElementById('confirmar-texto').textContent = texto;
+  document.getElementById('confirmar-sim').textContent = rotuloSim;
+  return new Promise((ok) => {
+    dlg.addEventListener('close', () => ok(dlg.returnValue === 'sim'), { once: true });
+    dlg.returnValue = '';
+    dlg.showModal();
+  });
 }
