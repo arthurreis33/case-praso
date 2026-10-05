@@ -1,0 +1,6 @@
+# Dados reais de campo NUNCA entram no repositório (RNF10)
+*.csv
+praso-campo-*.json
+dados/
+node_modules/
+.vercel/

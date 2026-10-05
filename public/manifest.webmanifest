@@ -1,0 +1,13 @@
+{
+  "name": "Campo Praso · V1",
+  "short_name": "Campo V1",
+  "description": "Instrumento de pesquisa de campo do case RevOps Praso",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "pt-BR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
