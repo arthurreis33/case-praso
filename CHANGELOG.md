@@ -1,5 +1,10 @@
 # Changelog
 
+## V2.1.1 · 06/10/2026
+
+- **Correção:** o Mapa quebrava com "L.divIcon is not a function" sempre que a carteira tinha um ponto sem localização. A função que desenha o pino tinha o mesmo nome do ícone importado e o escondia. Ela foi renomeada para `iconePino`, e um teste no navegador (`qa/mapa_sem_pino.mjs`) passou a cobrir o caso.
+- O aviso "N pontos sem localização" leva à Lista com o novo filtro **Sem localização**.
+
 ## V2.1 · 06/10/2026
 
 Revisão de produto, arquitetura e design para o teste com vendedores na rua. Nenhuma função foi apagada: o que saiu da tela mudou de lugar. A auditoria está em `docs/AUDITORIA_V2.md`, e os prints de antes e depois em `docs/prints/v2.1/`.

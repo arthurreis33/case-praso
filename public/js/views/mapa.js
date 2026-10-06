@@ -48,7 +48,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     </div>
     <div class="mapa-wrap"><div id="mapa" role="application" aria-label="Mapa dos pontos"></div></div>
     <div id="mapa-aviso"></div>
-    ${(() => { const n = store.meusPontos().filter((p) => !coordDe(p)).length; return n ? `<p class="sutil sem-pino">${icone('alerta')}${n} ${n === 1 ? 'ponto sem localização' : 'pontos sem localização'}: o check-in marca o lugar. <a href="${linkCarteira('verificar')}">Ver na Carteira</a></p>` : ''; })()}
+    ${(() => { const n = store.meusPontos().filter((p) => !coordDe(p)).length; return n ? `<p class="sutil sem-pino">${icone('alerta')}${n} ${n === 1 ? 'ponto sem localização' : 'pontos sem localização'}: o check-in marca o lugar. <a href="${linkCarteira('sem_pino')}">Ver na Carteira</a></p>` : ''; })()}
     <details class="legenda-dobra"><summary>O que é cada cor</summary>
       <ul class="legenda">${ESTADOS.map(([k, r]) => `<li><span class="cor-estado e-${k}">${iconeEstado(k)}</span><b>${esc(r)}</b> · ${esc(ESTADO_DESCRICAO[k])}</li>`).join('')}
       <li><span class="pino desconhecido" style="width:22px;height:22px;display:inline-grid"><b style="font-size:11px">?</b></span><b>Fora da carteira</b> · ainda não é ponto seu</li></ul></details>
@@ -105,7 +105,9 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     return true;
   }
 
-  function icone(L, estado, extra = '') {
+  // nome próprio: `icone` é o ícone do sprite (importado). Em 06/10 esta função se chamava `icone` e
+  // sombreava o import, quebrando o mapa quando havia ponto sem localização.
+  function iconePino(L, estado, extra = '') {
     // alvo de toque de 48 px em volta do pino de 30 px (o pino fica com a ponta no ponto)
     return L.divIcon({ className: 'alvo-pino', html: `<div class="pino ${extra}" style="--cor:${COR[estado]}"><b>${iconeEstado(estado)}</b></div>`, iconSize: [48, 48], iconAnchor: [24, 46], popupAnchor: [0, -40] });
   }
@@ -132,7 +134,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     for (const p of store.meusPontos()) {
       const c = coordDe(p);
       if (!c || !visivel(p)) continue;
-      const m = L.marker([c.lat, c.lng], { icon: icone(L, p.estado), title: `${nomeDe(p)} · ${rotulo(ESTADOS, p.estado)}`, alt: nomeDe(p), keyboard: true, draggable: false });
+      const m = L.marker([c.lat, c.lng], { icon: iconePino(L, p.estado), title: `${nomeDe(p)} · ${rotulo(ESTADOS, p.estado)}`, alt: nomeDe(p), keyboard: true, draggable: false });
       m.bindPopup(() => popupPonto(p));
       m.on('contextmenu', (e) => { L.DomEvent.stop(e); iniciarArraste(p.id); });
       m.on('dragend', () => terminarArraste(p.id, m));

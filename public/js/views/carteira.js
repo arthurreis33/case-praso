@@ -13,9 +13,9 @@ import { DIA_MS } from '../estados.js';
 // estado da tela (sobrevive à troca de aba nesta sessão)
 const ui = {
   modo: 'funil', aberta: null, busca: '', estados: new Set(), tipos: new Set(), pontos: null,
-  semVisita: false, prazo: false, retornar: false, verificar: false, ordem: 'esperados', limite: 40,
+  semVisita: false, prazo: false, retornar: false, verificar: false, semPino: false, ordem: 'esperados', limite: 40,
 };
-const LIMPO = () => ({ busca: '', estados: new Set(), tipos: new Set(), pontos: null, semVisita: false, prazo: false, retornar: false, verificar: false });
+const LIMPO = () => ({ busca: '', estados: new Set(), tipos: new Set(), pontos: null, semVisita: false, prazo: false, retornar: false, verificar: false, semPino: false });
 
 /** Link de outra tela para a Lista já filtrada: #/carteira?filtro=prazo|retornar|verificar|sem_visita|estado:churn */
 export const linkCarteira = (filtro) => `#/carteira?filtro=${encodeURIComponent(filtro)}`;
@@ -30,6 +30,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
     else if (f === 'prazo') ui.prazo = true;
     else if (f === 'retornar') ui.retornar = true;
     else if (f === 'verificar') ui.verificar = true;
+    else if (f === 'sem_pino') ui.semPino = true;
     else if (f === 'sem_visita') ui.semVisita = true;
     history.replaceState(history.state, '', '#/carteira');
   }
@@ -120,6 +121,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
     if (f === 'prazo') ui.prazo = !ui.prazo;
     if (f === 'retornar') ui.retornar = !ui.retornar;
     if (f === 'verificar') ui.verificar = !ui.verificar;
+    if (f === 'sem_pino') ui.semPino = !ui.semPino;
     ui.limite = 40;
   }
 
@@ -140,6 +142,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
       if (ui.prazo && !prazoVencendo(s)) return false;
       if (ui.retornar && !(p.status_dia === 'retornar' && p.retorno_sugerido)) return false;
       if (ui.verificar && !(p.verificar || !p.cnpj)) return false;
+      if (ui.semPino && coordDe(p)) return false;
       return true;
     });
   }
@@ -164,7 +167,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
       <div class="chips rolagem" aria-label="Filtrar por tipo">${TIPOS.map(([v, r]) => chip('tipo', v, r, ui.tipos.has(v))).join('')}</div>
       <div class="chips rolagem" aria-label="Outros filtros">
         ${chip('pontos', '3', '3 pt', ui.pontos === '3')}${chip('pontos', '1', '1 pt', ui.pontos === '1')}${chip('pontos', '0.5', '0,5 pt', ui.pontos === '0.5')}
-        ${chip('sem_visita', '1', `Sem visita há +${N_SEM_VISITA} d`, ui.semVisita)}${chip('prazo', '1', 'Prazo vencendo', ui.prazo)}${chip('retornar', '1', 'Retorno marcado', ui.retornar)}${chip('verificar', '1', 'Sem CNPJ', ui.verificar)}
+        ${chip('sem_visita', '1', `Sem visita há +${N_SEM_VISITA} d`, ui.semVisita)}${chip('prazo', '1', 'Prazo vencendo', ui.prazo)}${chip('retornar', '1', 'Retorno marcado', ui.retornar)}${chip('verificar', '1', 'Sem CNPJ', ui.verificar)}${chip('sem_pino', '1', 'Sem localização', ui.semPino)}
       </div>
       <div class="secao-titulo"><span class="sutil" id="n-res">${res.length} pontos</span>
         <label class="sutil">Ordenar <select id="ordem" style="min-height:48px;width:auto;padding:4px 8px">
