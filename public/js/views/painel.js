@@ -5,7 +5,8 @@
 //  comportamento — o painel que tenta explicar por que alguns convertem o dobro. Equipe fictícia.
 import { esc, pct } from '../ui.js';
 import { fmtPontos } from '../rules.js';
-import { pontosSemana, meuFunil, meuComportamento, recomprasEmRisco, equipeFicticia, quartilDeCima, ETAPAS_CURTAS } from '../painel.js';
+import { pontosSemana, meuFunil, meuComportamento, recomprasEmRisco, equipeFicticia, quartilDeCima, ETAPAS_CURTAS, meusMotivos, topMotivos, fracaoExecucao } from '../painel.js';
+import { MOTIVOS_NAO_AVANCO, rotulo } from '../catalogo.js';
 import { linhaCompacta } from './componentes.js';
 import { linkCarteira } from './carteira.js';
 import { modoDemo } from '../demo.js';
@@ -16,6 +17,7 @@ export function renderPainel({ main, store }) {
   const top = quartilDeCima(equipeFicticia());
   const comp = meuComportamento(store);
   const risco = recomprasEmRisco(store);
+  const motSemana = topMotivos(meusMotivos(store, 7)); // V2.2
   // onde mais perde: maior diferença negativa contra o quartil de cima
   let pior = null;
   eu.taxas.forEach((t, i) => { if (t == null) return; const gap = t - top.taxas[i]; if (!pior || gap < pior.gap) pior = { i, gap }; });
@@ -43,6 +45,7 @@ export function renderPainel({ main, store }) {
         </div>`).join('')}
     </div>
     ${pior && pior.gap < -0.02 ? `<p class="insight">Onde você mais perde: <b>${esc(ETAPAS_CURTAS[pior.i])} → ${esc(ETAPAS_CURTAS[pior.i + 1])}</b>, ${Math.round(-pior.gap * 100)} pontos percentuais abaixo dos melhores.</p>` : (eu.taxas.every((t) => t == null) ? '<p class="sutil">Seu funil aparece depois das primeiras visitas.</p>' : '<p class="sutil">Você está no nível dos melhores do time em todas as etapas.</p>')}
+    ${motSemana.length ? `<p class="motivos-semana">Por que não avançou (7 dias): ${motSemana.map(([k, n], i) => `${i ? '' : '<b>'}${esc(rotulo(MOTIVOS_NAO_AVANCO, k))} ${n}${i ? '' : '</b>'}`).join(' · ')}</p>` : ''}
 
     <div class="kpis">
       <div class="kpi"><div class="v">${pct(comp.retorno_janela)}</div><div class="r">retornos na janela do decisor${comp.n_revisitas ? ` (${comp.n_revisitas} revisitas)` : ''}</div></div>
@@ -52,8 +55,11 @@ export function renderPainel({ main, store }) {
     ${risco.length > 3 ? `<a class="btn mais-link" href="${linkCarteira('prazo')}">Ver as ${risco.length} na Carteira</a>` : ''}`;
 }
 
+// V2.2 · rótulos curtos dos motivos para a tabela da Equipe (o rótulo inteiro vai no title e na legenda)
+const MOTIVO_CURTO = { tem_fornecedor: 'Fornecedor', preco: 'Preço', quer_prazo: 'Prazo', desconfia_app: 'App', sem_tempo: 'Sem tempo', vai_pensar: 'Pensar', nao_icp: 'Não ICP', outro: 'Outro' };
+
 export function renderGestor({ main, store }) {
-  const equipe = [{ id: 'v-voce', nome: 'Você', funil: meuFunil(store), comportamento: meuComportamento(store) }, ...equipeFicticia()];
+  const equipe = [{ id: 'v-voce', nome: 'Você', funil: meuFunil(store), comportamento: meuComportamento(store), motivos: meusMotivos(store) }, ...equipeFicticia()];
   const ord = [...equipe].sort((a, b) => (b.funil.total ?? 0) - (a.funil.total ?? 0));
   const n = Math.max(1, Math.round(ord.length / 4));
   const topo = ord.slice(0, n + 1); // os 2 melhores
@@ -69,6 +75,15 @@ export function renderGestor({ main, store }) {
   const hora = (h) => (h == null ? '–' : `${Math.floor(h)}h${String(Math.round((h % 1) * 60)).padStart(2, '0')}`);
   const num = (x, d = 0) => (x == null ? '–' : x.toFixed(d).replace('.', ','));
   const razao = topo.length && base.length ? (med(topo.map((x) => ({ comportamento: { t: x.funil.total } })), 't') / Math.max(0.001, med(base.map((x) => ({ comportamento: { t: x.funil.total } })), 't'))) : null;
+  // V2.2 · motivos: a cor satura em 40% (as frações são menores que as taxas de passagem)
+  const celMotivo = (t) => {
+    if (t == null) return '<td class="c">–</td>';
+    const i = Math.max(0, Math.min(RAMPA.length - 1, Math.floor((t / 0.4) * RAMPA.length)));
+    return `<td class="c" style="background:${RAMPA[i]};color:${i >= 3 ? '#fff' : '#0b0b0b'}">${pct(t)}</td>`;
+  };
+  const somaMotivos = (xs) => xs.reduce((acc, x) => { for (const [k, n] of Object.entries(x.motivos || {})) acc[k] = (acc[k] || 0) + n; return acc; }, {});
+  const execTopo = fracaoExecucao(somaMotivos(topo));
+  const execBase = fracaoExecucao(somaMotivos(base));
   const diffs = [
     ['retorno_janela', 'dos retornos na janela do decisor', pct],
     ['voz', 'das notas por voz', pct],
@@ -94,5 +109,14 @@ export function renderGestor({ main, store }) {
       <thead><tr><th>Vendedor</th><th class="n">Hora média</th><th class="n">Min no ponto</th><th class="n">Retorno na janela</th><th class="n">Nota por voz</th><th class="n">Registro (s)</th><th class="n">Registrou antes de sair</th></tr></thead>
       <tbody>${ord.map((v) => { const c = v.comportamento; return `<tr><td class="nome-v">${esc(v.nome)}</td><td class="n">${hora(c.hora_media)}</td><td class="n">${num(c.no_ponto_min)}</td><td class="n">${pct(c.retorno_janela)}</td><td class="n">${pct(c.voz)}</td><td class="n">${num(c.nucleo_s)}</td><td class="n">${pct(c.no_ponto_pct)}</td></tr>`; }).join('')}</tbody>
     </table></div>
-    <p class="dica">Retorno na janela: voltou até 1 h do horário combinado ou quando o decisor costuma estar.</p>`;
+    <p class="dica">Retorno na janela: voltou até 1 h do horário combinado ou quando o decisor costuma estar.</p>
+
+    <h2>Por que não avançou</h2>
+    <p class="sutil">Motivos marcados quando o decisor não cadastrou ou recusou: a etapa de decisor para cadastro.</p>
+    ${execTopo != null && execBase != null ? `<p class="insight">Nos 2 de baixo, <b>${pct(execBase)}</b> das perdas são "sem tempo", "vai pensar" ou "desconfia de app", contra <b>${pct(execTopo)}</b> nos 2 de cima. São motivos que a hora e o jeito da visita mudam.</p>` : ''}
+    <div class="tabela-rolagem"><table class="tabela calor">
+      <thead><tr><th style="text-align:left">Vendedor</th>${MOTIVOS_NAO_AVANCO.map(([k, r]) => `<th title="${esc(r)}">${esc(MOTIVO_CURTO[k] || r)}</th>`).join('')}<th class="n">Perdas</th></tr></thead>
+      <tbody>${ord.map((v) => { const m = v.motivos || {}; const tot = Object.values(m).reduce((s, x) => s + x, 0); return `<tr><td class="nome-v">${esc(v.nome)}</td>${MOTIVOS_NAO_AVANCO.map(([k]) => celMotivo(tot ? (m[k] || 0) / tot : null)).join('')}<td class="n">${tot}</td></tr>`; }).join('')}</tbody>
+    </table></div>
+    <p class="dica">Fração das perdas de cada vendedor por motivo. Fornecedor = já tem fornecedor · App = desconfia de app · Pensar = vai pensar.</p>`;
 }

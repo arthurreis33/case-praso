@@ -6,6 +6,7 @@ import { pontosValor, fmtPontos, faixasFuncionamento, abreNoDia } from './rules.
 import { FAIXAS, rotulo } from './catalogo.js';
 import { DIA_MS } from './estados.js';
 import { hora, dinheiro } from './ui.js';
+import { motivoDaVisita } from './proxima.js';
 
 const FAIXA = Object.fromEntries(FAIXAS.map(([k, r, a, b]) => [k, { r, a, b }]));
 const minutosDe = (d) => d.getHours() * 60 + d.getMinutes();
@@ -138,6 +139,9 @@ export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = 
       motivos.push(`visitado há ${Math.max(1, Math.round(dias))} dias sem avanço`);
     }
   }
+
+  // V2.2: "Não é ICP" na última visita tira o ponto da lista do dia. Os outros motivos não mexem na chance.
+  if (motivoDaVisita(ult, cfg)?.chave === 'nao_icp') bloqueio = 'não é ICP';
 
   if (bloqueio) chance = 0;
   chance = Math.min(1, chance);

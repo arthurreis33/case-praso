@@ -5,6 +5,15 @@
 Cenário simulado: as regras são implementadas de verdade, e os valores são palpites assumidos. As visitas de campo foram poucas para calibrar.
 
 - **B1 · Regras de comportamento como palpite:** nenhum valor foi trocado. Picos e funcionamento por tipo (`config.js`), `QUEM_DECIDE`, `MOTIVOS_NAO_AVANCO`, `GATILHOS_TROCA` e `CANAIS` (`catalogo.js`) e a cesta de entrada (`demo/catalogo.js`) ganharam a marca `PALPITE (V2.2)`. A calibração foi para "próximos passos" no README.
+- **B2 · O motivo de não avanço devolve algo:**
+  - **Regras num lugar só:** `CONFIG.motivos` tem uma entrada por motivo, com a próxima ação, o argumento para a próxima visita e o porquê. São palpites do cenário simulado.
+  - **Próxima ação:** com o motivo marcado, a sugestão vem de `CONFIG.motivos`. Por exemplo, "Preço" sugere retorno em 3 dias, "Já tem fornecedor" em 7 dias na janela, e "Não é ICP" fica sem próxima ação. Sem motivo, ou com "Outro", vale a regra de antes.
+  - **Ficha e card do Hoje:** a linha "Da última vez: {motivo} · {argumento}". No card, ela é uma 4ª linha, que só aparece quando há motivo.
+  - **Prioridade:** "Não é ICP" na última visita zera a chance e explica ("Hoje não: não é ICP"). Os outros motivos não mexem na chance.
+  - **Equipe:** seção "Por que não avançou", com a fração das perdas por motivo e vendedor e o contraste entre os 2 de cima e os 2 de baixo nos motivos de execução ("sem tempo", "vai pensar" e "desconfia de app").
+  - **Semana:** os 3 motivos mais frequentes dos últimos 7 dias, numa linha.
+  - **Dados de exemplo:** a equipe ganha motivos determinísticos, com semente própria para os outros números não mudarem. O seed ganha 6 leads com motivo marcado e retorno hoje ou amanhã, como o app sugeriria.
+  - **Testes:** `tests/motivos.test.mjs` cobre cada motivo, o caso sem motivo, a prioridade e os painéis.
 
 ## V2.2 · Fase A · 06/10/2026
 

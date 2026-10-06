@@ -104,7 +104,7 @@ export function renderHoje({ main, barra, store, render }) {
       const p = store.ponto(x.id);
       if (!p) return '';
       return cardPonto(store, p, {
-        ordem: x.ordem, eta: hora(x.chegada), motivo: x.motivo,
+        ordem: x.ordem, eta: hora(x.chegada), motivo: x.motivo, ultimaVez: true,
         sub: feitos.has(p.id) ? 'Visitado hoje' : x.espera_min ? `Espera ${x.espera_min} min` : null,
         lado: `<button type="button" data-tirar="${esc(p.id)}" aria-label="Tirar ${esc(nomeDe(p))} da rota">${icone('tirar')}<span>Tirar</span></button>`,
       });

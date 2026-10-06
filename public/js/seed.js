@@ -8,6 +8,7 @@ import { PRODUTOS, PERFIL_TIPO } from './demo/catalogo.js';
 import { proximaOcorrencia } from './rules.js';
 import { DIA_MS } from './estados.js';
 import { tempos } from './migrar.js';
+import { sugerirProximaAcao } from './proxima.js';
 
 export const SEED_VERSAO = 'seed-v2-2';
 
@@ -345,6 +346,26 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
       });
     }
   }
+
+  // ---------- V2.2 · o motivo de não avanço muda a tela de amanhã ----------
+  // Leads que falaram com o decisor e não cadastraram, com o motivo marcado. A próxima ação vem de
+  // CONFIG.motivos, como no app: metade volta hoje e metade amanhã, com "Da última vez" no card.
+  // Fica no fim para não mexer no resto do seed.
+  const semVisita = pontos.filter((p) => !p.cadastro_em && !visitas.some((v) => v.ponto_id === p.id));
+  const CASOS_MOTIVO = [['vai_pensar', 2, 0], ['preco', 3, 0], ['sem_tempo', 1, 0], ['desconfia_app', 3, 1], ['quer_prazo', 3, 1], ['tem_fornecedor', 7, 1]];
+  CASOS_MOTIVO.forEach(([motivo, dias, depois], i) => {
+    const p = semVisita[i];
+    if (!p) return;
+    const faixas = p.decisor?.janela?.faixas?.length ? p.decisor.janela.faixas : ['14-17'];
+    p.decisor = { papel: p.decisor?.papel || 'dono', janela: { dias: [], faixas }, atualizado_em: null };
+    // "sem tempo" foi ontem no fim da tarde, depois da janela; os outros, de manhã, `dias` antes do retorno
+    const ms = motivo === 'sem_tempo' ? inicioHoje - DIA_MS + (17 * 60 + 30) * 60000 : inicioHoje - (dias - depois) * DIA_MS + 10 * 3600000;
+    const v = visita(p, ms, { resultado: 'falou_com_decisor', faixas, dias: [], motivo });
+    p.decisor.atualizado_em = v.checkout.em;
+    const s = sugerirProximaAcao(v, p, { agora: new Date(v.checkout.em) });
+    v.proxima_acao = { ...s, sugerida: true, confirmada_em: v.checkout.em };
+    if (s.data_hora) Object.assign(p, { status_dia: 'retornar', retorno_sugerido: s.data_hora, retorno_motivo: 'proxima_acao' });
+  });
 
   return { pontos, pedidos, visitas, contatos, desconhecidos, vendedores: [] };
 }

@@ -2,6 +2,7 @@
 // Toda sugestão vem com o porquê.
 import { proximaOcorrencia, faixasFuncionamento } from './rules.js';
 import { DIA_MS } from './estados.js';
+import { CONFIG } from './config.js';
 
 const em = (d, h, m = 0) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m);
 const amanha = (agora) => new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1);
@@ -13,13 +14,38 @@ function proximaAbertura(p, agora) {
   return em(d, Math.floor((a + 60) / 60), (a + 60) % 60);
 }
 
+/** Primeiro horário "aberto" do ponto num dia (abertura + 1h). */
+function aberturaNoDia(p, dia) {
+  const [a] = faixasFuncionamento(p)[0] || [8 * 60];
+  return em(dia, Math.floor((a + 60) / 60), (a + 60) % 60);
+}
+
+/**
+ * V2.2 · a próxima ação que vem do motivo de não avanço (regras em CONFIG.motivos).
+ * Devolve null quando o motivo não tem regra própria (vale a sugestão de antes).
+ */
+function sugestaoDoMotivo(motivo, p, agora, naJanela, cfg) {
+  const regra = cfg.motivos?.[motivo];
+  const px = regra?.proxima;
+  if (!px) return null;
+  if (px.tipo === 'nenhuma') return { tipo: 'nenhuma', data_hora: null, porque: regra.porque };
+  let q;
+  if (px.janela === 'proxima') {
+    q = naJanela(new Date(agora.getTime() + 60 * 60000)) || aberturaNoDia(p, amanha(agora));
+  } else {
+    const dia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + (px.dias || 1));
+    q = (px.janela && naJanela(dia)) || aberturaNoDia(p, dia);
+  }
+  return { tipo: px.tipo, data_hora: q.toISOString(), porque: regra.porque };
+}
+
 /**
  * @param v       visita (nucleo.resultado, nucleo.faixas/dias, tipo)
  * @param p       ponto (decisor, tipo, horario_funcionamento)
- * @param ctx     { agora: Date, cadastroNaVisita: bool, sit: situação do motor }
+ * @param ctx     { agora: Date, cadastroNaVisita: bool, sit: situação do motor, cfg }
  * @returns { tipo, data_hora, porque } | null
  */
-export function sugerirProximaAcao(v, p, { agora, cadastroNaVisita = false, sit = null }) {
+export function sugerirProximaAcao(v, p, { agora, cadastroNaVisita = false, sit = null, cfg = CONFIG }) {
   const r = v.nucleo?.resultado;
   const faixas = v.nucleo?.faixas?.length ? v.nucleo.faixas : p.decisor?.janela?.faixas || [];
   const dias = v.nucleo?.faixas?.length ? v.nucleo.dias : p.decisor?.janela?.dias || [];
@@ -30,6 +56,11 @@ export function sugerirProximaAcao(v, p, { agora, cadastroNaVisita = false, sit 
     return { tipo: 'acompanhar_1a_compra', data_hora: q.toISOString(), porque: 'cadastro feito: acompanhe a 1ª compra no app' };
   }
   if (!r) return null;
+  // V2.2: com motivo marcado, a sugestão vem do motivo; sem motivo, segue a regra de antes
+  if (pedeMotivo(r, cadastroNaVisita) && v.motivo_nao_avanco) {
+    const s = sugestaoDoMotivo(v.motivo_nao_avanco, p, agora, naJanela, cfg);
+    if (s) return s;
+  }
   if (r === 'aberto_sem_decisor') {
     const q = naJanela(agora);
     if (q) return { tipo: 'retorno', data_hora: q.toISOString(), porque: 'decisor ausente: retorno na próxima janela dele' };
@@ -56,3 +87,13 @@ export function sugerirProximaAcao(v, p, { agora, cadastroNaVisita = false, sit 
 /** O resultado é avanço? Se não for, aparece o chip de motivo. */
 export const pedeMotivo = (resultado, cadastroNaVisita) =>
   resultado === 'recusou' || (resultado === 'falou_com_decisor' && !cadastroNaVisita);
+
+/**
+ * V2.2 · motivo de não avanço da visita, quando o resultado pede motivo e ele foi marcado.
+ * Devolve { chave, argumento } ou null.
+ */
+export function motivoDaVisita(v, cfg = CONFIG) {
+  const m = v?.motivo_nao_avanco;
+  if (!m || !pedeMotivo(v.nucleo?.resultado, false)) return null;
+  return { chave: m, argumento: cfg.motivos?.[m]?.argumento || '' };
+}

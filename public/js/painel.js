@@ -1,9 +1,10 @@
 // Métricas dos painéis (seção 6.10). Funções puras sobre o store; a equipe fictícia é determinística.
 import { pontosValor } from './rules.js';
 import { DIA_MS } from './estados.js';
-import { FAIXAS } from './catalogo.js';
+import { FAIXAS, MOTIVOS_NAO_AVANCO } from './catalogo.js';
 import { rng } from './seed.js';
 import { CONFIG } from './config.js';
+import { motivoDaVisita } from './proxima.js';
 
 const FAIXA = Object.fromEntries(FAIXAS.map(([k, , a, b]) => [k, [a, b]]));
 export const ETAPAS_CURTAS = ['Planejada', 'Visitada', 'Decisor', 'Cadastro', '1ª compra', '3ª pelo app'];
@@ -72,6 +73,51 @@ export function meuComportamento(store, dias = 60) {
   };
 }
 
+// ---------- V2.2 · por que não avançou (etapa decisor → cadastro) ----------
+const ORDEM_MOTIVO = Object.fromEntries(MOTIVOS_NAO_AVANCO.map(([k], i) => [k, i]));
+// Motivos que dependem da hora e do jeito da visita (o vendedor muda); os outros são do cliente.
+export const MOTIVOS_EXECUCAO = ['sem_tempo', 'vai_pensar', 'desconfia_app'];
+
+/** Contagem dos motivos de não avanço do vendedor nos últimos `dias`: { chave: n }. */
+export function meusMotivos(store, dias = 60) {
+  const vid = store.estado.config.vendedor_id;
+  const desde = store.agora().getTime() - dias * DIA_MS;
+  const cont = {};
+  for (const v of store.estado.visitas) {
+    if ((v.vendedor_id || 'v-voce') !== vid || new Date(v.checkin.em).getTime() < desde) continue;
+    const m = motivoDaVisita(v);
+    if (m) cont[m.chave] = (cont[m.chave] || 0) + 1;
+  }
+  return cont;
+}
+
+/** Os `n` motivos mais frequentes: [[chave, n], …], empate na ordem do catálogo. */
+export const topMotivos = (cont, n = 3) => Object.entries(cont)
+  .sort((a, b) => b[1] - a[1] || (ORDEM_MOTIVO[a[0]] ?? 99) - (ORDEM_MOTIVO[b[0]] ?? 99)).slice(0, n);
+
+/** Fração das perdas por motivo de execução. */
+export function fracaoExecucao(cont) {
+  const tot = Object.values(cont).reduce((s, x) => s + x, 0);
+  return tot ? MOTIVOS_EXECUCAO.reduce((s, k) => s + (cont[k] || 0), 0) / tot : null;
+}
+
+// Equipe fictícia: quem converte mais perde mais por motivo do cliente (já tem fornecedor, preço);
+// quem converte menos perde mais por execução (sem tempo, vai pensar, desconfia de app). PALPITE (V2.2).
+const PESO_MOTIVO = {
+  tem_fornecedor: (f) => 20 + 12 * f, preco: (f) => 14 + 4 * f, quer_prazo: (f) => 10 + 2 * f,
+  desconfia_app: (f) => 18 - 12 * f, sem_tempo: (f) => 22 - 18 * f, vai_pensar: (f) => 20 - 14 * f,
+  nao_icp: () => 5, outro: () => 4,
+};
+function motivosFicticios(n, f, r) {
+  const pesos = Object.entries(PESO_MOTIVO).map(([k, w]) => [k, w(f) * (0.85 + 0.3 * r())]);
+  const tot = pesos.reduce((s, [, w]) => s + w, 0);
+  const brutos = pesos.map(([k, w]) => [k, (n * w) / tot]);
+  const cont = Object.fromEntries(brutos.map(([k, x]) => [k, Math.floor(x)]));
+  let resto = n - Object.values(cont).reduce((s, x) => s + x, 0);
+  for (const [k] of [...brutos].sort((a, b) => (b[1] % 1) - (a[1] % 1))) { if (resto-- <= 0) break; cont[k]++; }
+  return cont;
+}
+
 /** Recompras em risco: ativação perto dos 45 dias ou recorrente passando do próprio ciclo de compra. */
 export function recomprasEmRisco(store) {
   const r = [];
@@ -90,6 +136,7 @@ export function recomprasEmRisco(store) {
  */
 export function equipeFicticia() {
   const r = rng(777);
+  const rm = rng(778); // V2.2: motivos com semente própria, para não mexer nos números que já existiam
   const perfis = [
     { id: 'v-b', nome: 'Vendedor B', forca: 1.0 },
     { id: 'v-c', nome: 'Vendedor C', forca: 0.92 },
@@ -105,6 +152,7 @@ export function equipeFicticia() {
     return {
       id, nome, ficticio: true,
       funil: funilDe(c),
+      motivos: motivosFicticios(c[2] - c[3], f, rm), // perdas entre decisor e cadastro
       comportamento: {
         n: c[0],
         hora_media: 10.2 + (1 - f) * 0.4 + (r() - 0.5) * 0.6,

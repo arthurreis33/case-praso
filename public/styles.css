@@ -223,6 +223,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .chip:focus-v
 .card .nome { font-weight: 700; font-size: 1.02rem; line-height: 1.25; overflow-wrap: anywhere; }
 .card .linha2 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 .card .linha3 { font-size: .88rem; margin-top: 4px; color: var(--sutil); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* V2.2 · o motivo da última visita devolve o argumento para a próxima */
+.card .ultima-vez { font-size: .85rem; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.proxima-ficha .ultima-vez { margin: 4px 0; font-size: .92rem; }
+.motivos-semana { margin: 6px 0; font-size: .92rem; }
 .situacao { font-size: .86rem; font-weight: 700; }
 .situacao.urgente { color: var(--erro); }
 .card .lado { display: flex; flex-direction: column; border-left: 1px solid var(--linha); min-width: 64px; }

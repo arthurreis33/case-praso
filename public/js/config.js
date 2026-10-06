@@ -68,6 +68,57 @@ export const CONFIG = {
     outro: [['08:00', '18:00']],
   },
 
+  // ---------- Motivo de não avanço → próxima ação (V2.2) ----------
+  // Uma entrada por chave de MOTIVOS_NAO_AVANCO (catalogo.js). É o que faz o motivo mudar a tela de amanhã.
+  // PALPITE (V2.2): cenário simulado; prazos e frases são hipóteses para validar com o gestor e o campo.
+  //  proxima:   { tipo, dias, janela }. dias: quantos dias depois da visita. janela: true = na janela do decisor
+  //             a partir desse dia; 'proxima' = a próxima janela do decisor. tipo 'nenhuma' = sem próxima ação.
+  //             null = sem regra própria: vale a sugestão de antes da V2.2.
+  //  argumento: frase curta para a próxima visita ("Da última vez: <motivo> · <argumento>").
+  //  porque:    texto mostrado na sugestão da próxima ação.
+  motivos: {
+    tem_fornecedor: {
+      proxima: { tipo: 'retorno', dias: 7, janela: true },
+      argumento: 'Entre por uma categoria só: a cesta de entrada, sem trocar o fornecedor.',
+      porque: 'já tem fornecedor: volte em 7 dias, na janela dele, com a cesta de entrada',
+    },
+    preco: {
+      proxima: { tipo: 'retorno', dias: 3 },
+      argumento: 'Os preços estão no app sem login; compare item por item no balcão.',
+      porque: 'achou caro: volte em 3 dias e compare os preços item por item',
+    },
+    quer_prazo: {
+      proxima: { tipo: 'retorno', dias: 3 },
+      argumento: 'Com CNPJ, pode ter 7 dias para pagar, mediante análise de crédito. Não prometa.',
+      porque: 'quer prazo: volte em 3 dias e explique os 7 dias mediante análise de crédito',
+    },
+    desconfia_app: {
+      proxima: { tipo: 'retorno', dias: 3, janela: true },
+      argumento: 'Faça o cadastro junto com ele e um primeiro pedido pequeno, sem pedido mínimo.',
+      porque: 'desconfia de app: volte em 3 dias, na janela dele, e faça o cadastro junto',
+    },
+    sem_tempo: {
+      proxima: { tipo: 'retorno', janela: 'proxima' },
+      argumento: 'Volte na janela em que ele está livre.',
+      porque: 'estava sem tempo: volte na próxima janela do decisor',
+    },
+    vai_pensar: {
+      proxima: { tipo: 'retorno', dias: 2 },
+      argumento: 'Combine o dia e leve a cesta de entrada pronta.',
+      porque: 'vai pensar: volte em 2 dias com a cesta de entrada pronta',
+    },
+    nao_icp: {
+      proxima: { tipo: 'nenhuma' },
+      argumento: 'O ponto sai da lista do dia.',
+      porque: 'não é ICP: o ponto sai da lista do dia',
+    },
+    outro: {
+      proxima: null,
+      argumento: 'Releia a nota da última visita antes de entrar.',
+      porque: null,
+    },
+  },
+
   // ---------- Roteirizador (seção 6.3) ----------
   rota: {
     tortuosidade: 1.4, // distância real ≈ haversine × fator

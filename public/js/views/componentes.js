@@ -1,5 +1,6 @@
 // Peças de interface compartilhadas pelas telas: card do ponto, próxima ação, prazo.
-import { PROXIMAS_ACOES, rotulo } from '../catalogo.js';
+import { PROXIMAS_ACOES, MOTIVOS_NAO_AVANCO, rotulo } from '../catalogo.js';
+import { motivoDaVisita } from '../proxima.js';
 import { esc, seloEstado, seloPontos, quando, mapsUrl } from '../ui.js';
 import { icone } from '../icones.js';
 import { pontosValor } from '../rules.js';
@@ -27,6 +28,13 @@ export function proximaAcao(store, p, sit = store.situacao(p.id)) {
     case 'recorrente': return { tipo: 'nenhuma', texto: 'Acompanhar recompra' };
     default: return { tipo: 'retorno', texto: ult ? 'Nova visita' : 'Primeira visita' };
   }
+}
+
+/** V2.2 · "Da última vez: {motivo} · {argumento}", quando a última visita teve motivo de não avanço. */
+export function daUltimaVez(store, p) {
+  const m = motivoDaVisita(store.visitasDo(p.id)[0]);
+  if (!m) return null;
+  return `Da última vez: ${rotulo(MOTIVOS_NAO_AVANCO, m.chave)}${m.argumento ? ` · ${m.argumento}` : ''}`;
 }
 
 export function prazoHtml(sit) {
@@ -71,7 +79,8 @@ const maiuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
  *  2 · estado, pontos e a situação ("2/3 compras · faltam 3 dias para a 3ª compra")
  *  3 · o porquê (no Hoje) ou a próxima ação (no resto)
  * Ações ficam ao lado (Tirar, Rota…). O card inteiro abre a ficha.
- * opts: { eta, ordem, motivo, sub, lado, semRota }
+ * opts: { eta, ordem, motivo, sub, lado, semRota, ultimaVez }
+ * V2.2: com `ultimaVez`, o card ganha a linha "Da última vez: …" quando a última visita teve motivo.
  */
 export function cardPonto(store, p, opts = {}) {
   const sit = store.situacao(p.id);
@@ -84,6 +93,7 @@ export function cardPonto(store, p, opts = {}) {
     && !/^\d\/3 compras$/.test(seg)
     && !(/^retorno combinado/.test(seg) && /^Volta/.test(st.texto))).join(' · ');
   const linha3 = [opts.sub, motivo ? maiuscula(motivo) : `Próxima: ${pa.texto}`].filter(Boolean).join(' · ');
+  const ultima = opts.ultimaVez ? daUltimaVez(store, p) : null;
   return `<div class="card e-${esc(sit.estado)} ${vencido ? 'vencido' : ''}" data-ponto="${esc(p.id)}">
     <a class="corpo" href="#/ponto/${esc(p.id)}">
       <div class="linha1">
@@ -92,6 +102,7 @@ export function cardPonto(store, p, opts = {}) {
       </div>
       <div class="linha2">${seloEstado(sit.estado)}${seloPontos(pontosValor(p))}${st.texto ? `<span class="situacao ${st.urgente ? 'urgente' : ''}">${esc(st.texto)}</span>` : ''}</div>
       <div class="linha3">${esc(linha3)}</div>
+      ${ultima ? `<div class="ultima-vez">${esc(ultima)}</div>` : ''}
       ${seloAvanco(store, p.id)}
     </a>
     <div class="lado">

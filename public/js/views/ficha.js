@@ -5,7 +5,7 @@ import { icone } from '../icones.js';
 import { esc, toast, quando, data, dinheiro, pct, seloEstado, seloPontos, janelaTexto, mapsUrl, confirmar, rotuloEstado, chips, alternarChip } from '../ui.js';
 import { pontosValor, altoPotencial, coordDe } from '../rules.js';
 import { nomeDe } from '../store.js';
-import { prazoHtml, proximaAcao, seloAvanco } from './componentes.js';
+import { prazoHtml, proximaAcao, seloAvanco, daUltimaVez } from './componentes.js';
 import { avaliarPrioridade, textoMotivo } from '../prioridade.js';
 import { resumoCompras, FORMAS_PAGAMENTO_ROTULO } from '../historico.js';
 import { MODELOS, modeloPara, enviarWhatsApp, cestaHtml } from '../whatsapp.js';
@@ -24,6 +24,7 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
   const visitas = store.visitasDo(p.id);
   const prior = avaliarPrioridade(store, p, { sit });
   const pa = proximaAcao(store, p, sit);
+  const ultimaVez = daUltimaVez(store, p);
   const c = coordDe(p);
   const alto = altoPotencial(p);
 
@@ -42,6 +43,7 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
     <section class="proxima-ficha" aria-label="Próxima ação">
       <div class="rot">${icone('seta')}Próxima ação</div>
       <p class="acao">${esc(pa.texto)}</p>
+      ${ultimaVez ? `<p class="ultima-vez">${esc(ultimaVez)}</p>` : ''}
       <p class="porque">${prior.esperados ? `Por que ir hoje: ${esc(textoMotivo(prior).replace(/^Vale [\d,.]+ pts? ?·? ?/, '') || 'vale a visita')} · ≈${String(prior.esperados).replace('.', ',')} pt prováveis` : `Hoje não: ${esc(prior.bloqueio || 'chance baixa')}`}</p>
     </section>
     <dl class="dl">
