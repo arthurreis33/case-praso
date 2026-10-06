@@ -12,7 +12,7 @@ import { duracoes } from '../rules.js';
 import { nomeDe } from '../store.js';
 import { CONFIG } from '../config.js';
 import { sugerirProximaAcao, pedeMotivo } from '../proxima.js';
-import { cesta } from '../whatsapp.js';
+import { destaqueAquisicao } from '../whatsapp.js';
 import { resumoCompras } from '../historico.js';
 import { montarGravador } from '../voz.js';
 import { modoDemo } from '../demo.js';
@@ -45,9 +45,9 @@ function htmlPesquisa(v) {
 function modeloVisita(store, v, p) {
   const sit = store.situacao(p.id);
   if (v.tipo === 'aquisicao') {
-    const c = cesta(p.tipo);
-    return `<div class="destaque-modelo"><b>Aquisição · objetivo: cadastro no app, agora.</b>
-      <div class="sutil">Cadastro no celular do dono; no fim, ele marca "Vendedor da Praso" em "Como você conheceu?". Cesta de entrada: ${esc(c.titulo)} (${esc(c.itens.slice(0, 3).map((i) => i.nome.split(' ')[0]).join(', '))}…). Os 7 dias para pagar dependem da análise de crédito: não prometa.</div></div>`;
+    const d = destaqueAquisicao(p.tipo, store.cadastroNaVisita(v)); // V2.2: com cadastro, o objetivo vira o 1º pedido
+    return `<div class="destaque-modelo"><b>${esc(d.titulo)}</b>
+      <div class="sutil">${esc(d.texto)}</div></div>`;
   }
   if (v.tipo === 'acompanhamento') {
     const ult = store.pedidosDo(p.id)[0];
@@ -75,7 +75,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
       <div id="pino"></div>
       ${v.retorno_previsto ? `<p class="retorno-previsto">Revisita · sugerido ${esc(quando(v.retorno_previsto.quando, store.agora()))}</p>` : ''}
     </div>
-    ${modeloVisita(store, v, p)}
+    <div id="modelo">${modeloVisita(store, v, p)}</div>
     <div id="cadastro-detectado"></div>
 
     <section class="nucleo" aria-label="Registro em 3 toques">
@@ -163,6 +163,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
 
   function atualizarMotivo() {
     const cad = store.cadastroNaVisita(v);
+    main.querySelector('#modelo').innerHTML = modeloVisita(store, v, p);
     elCad.innerHTML = cad
       ? '<div class="caixa destaque" role="status"><b>Cadastro feito no app durante a visita.</b> O ponto já está como Cadastrado.</div>'
       : (v.tipo === 'aquisicao' && !v.checkout && modoDemo() ? `<a class="btn mais-link demo-link" href="#/sim?p=${esc(p.id)}">Demonstração: simular "cadastro feito"</a>` : '');

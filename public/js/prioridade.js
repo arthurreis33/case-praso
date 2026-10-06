@@ -120,7 +120,19 @@ export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = 
     }
   }
   if (sit.estado === 'cadastrado_sem_compra' && p.cadastro_em) {
-    motivos.push(`cadastrado há ${Math.floor((agora - new Date(p.cadastro_em)) / DIA_MS)} dias, sem 1ª compra`);
+    // V2.2: a chance depende de há quanto tempo cadastrou (sobe logo depois, cai depois de 30 dias)
+    const dias = Math.max(0, Math.floor((agora - new Date(p.cadastro_em)) / DIA_MS));
+    const recente = (c.sobe.cadastro_recente || []).find(([ate]) => dias <= ate);
+    const antigo = c.cai.cadastro_antigo;
+    if (recente) {
+      chance *= recente[1];
+      motivos.push(`${dias === 0 ? 'cadastrou hoje' : dias === 1 ? 'cadastrou ontem' : `cadastrou há ${dias} dias`}: a 1ª compra é agora`);
+    } else if (antigo && dias > antigo.dias) {
+      chance *= antigo.fator;
+      motivos.push(`cadastrado há ${dias} dias sem compra`);
+    } else {
+      motivos.push(`cadastrado há ${dias} dias, sem 1ª compra`);
+    }
   }
 
   // ---- cai ----

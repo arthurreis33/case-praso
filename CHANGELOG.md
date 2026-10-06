@@ -14,6 +14,11 @@ Cenário simulado: as regras são implementadas de verdade, e os valores são pa
   - **Semana:** os 3 motivos mais frequentes dos últimos 7 dias, numa linha.
   - **Dados de exemplo:** a equipe ganha motivos determinísticos, com semente própria para os outros números não mudarem. O seed ganha 6 leads com motivo marcado e retorno hoje ou amanhã, como o app sugeriria.
   - **Testes:** `tests/motivos.test.mjs` cobre cada motivo, o caso sem motivo, a prioridade e os painéis.
+- **B3 · Do cadastro ao primeiro pedido:**
+  - **Na visita:** com o cadastro feito durante a visita, o destaque troca para "Cadastro feito · próximo passo: 1º pedido agora, com ele". Ele mostra a cesta de entrada do tipo e lembra que, sem pedido mínimo, um pedido pequeno vale (`destaqueAquisicao`, em `whatsapp.js`, reaproveita a `cesta()`).
+  - **Próxima ação:** "Acompanhar 1ª compra" no dia seguinte, com o porquê "se não pediu na visita".
+  - **Prioridade:** duas regras **PREMISSA** em `config.js`. `chance.sobe.cadastro_recente` multiplica a chance por 1,8 até 3 dias depois do cadastro e por 1,3 até 10 dias. `chance.cai.cadastro_antigo` multiplica por 0,6 depois de 30 dias sem compra. O motivo aparece no card: "cadastrou há 2 dias: a 1ª compra é agora" ou "cadastrado há 40 dias sem compra".
+  - **Testes:** `tests/cadastro.test.mjs` cobre os limites da chance (0, 3, 4, 10, 11, 30 e 31 dias) e a troca do destaque quando o cadastro acontece na visita.
 
 ## V2.2 · Fase A · 06/10/2026
 

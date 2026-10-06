@@ -31,11 +31,15 @@ export const CONFIG = {
       retorno_hoje: 2.2, // retorno combinado para hoje
       recompra_vencendo: 1.7, // em ativação, perto da reposição ou dos 45 dias
       churn_historico_alto: 1.5, // churn com ticket/volume acima da mediana
+      // PREMISSA (V2.2): logo depois do cadastro, a 1ª compra é agora. [até N dias, multiplicador]
+      cadastro_recente: [[3, 1.8], [10, 1.3]],
     },
     cai: {
       pico: 0.5, // horário de pico do tipo
       recusou_recente: 0.3, // recusou há menos de `dias_recusa`
       visitado_sem_avanco: 0.4, // visitado há menos de `dias_sem_avanco` sem mudar de etapa
+      // PREMISSA (V2.2): cadastrado há mais de `dias` sem comprar esfria
+      cadastro_antigo: { dias: 30, fator: 0.6 },
     },
     dias_recusa: 21,
     dias_sem_avanco: 7,

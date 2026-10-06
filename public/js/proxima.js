@@ -52,8 +52,11 @@ export function sugerirProximaAcao(v, p, { agora, cadastroNaVisita = false, sit 
   const naJanela = (aPartirDe) => (faixas.length ? proximaOcorrencia(aPartirDe, faixas, dias) : null);
 
   if (cadastroNaVisita) {
-    const q = naJanela(amanha(agora)) || em(amanha(agora), 10);
-    return { tipo: 'acompanhar_1a_compra', data_hora: q.toISOString(), porque: 'cadastro feito: acompanhe a 1ª compra no app' };
+    // V2.2: o 1º pedido se faz na visita, com ele; o acompanhamento é no dia seguinte (na janela, se ela cair nesse dia)
+    const d = amanha(agora);
+    const j = naJanela(d);
+    const q = j && j.toDateString() === d.toDateString() ? j : em(d, 10);
+    return { tipo: 'acompanhar_1a_compra', data_hora: q.toISOString(), porque: 'se não pediu na visita: acompanhe a 1ª compra amanhã' };
   }
   if (!r) return null;
   // V2.2: com motivo marcado, a sugestão vem do motivo; sem motivo, segue a regra de antes

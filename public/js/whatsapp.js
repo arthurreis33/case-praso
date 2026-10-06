@@ -22,6 +22,25 @@ export function cesta(tipo) {
   return { ...c, itens, total: itens.reduce((s, i) => s + i.preco, 0) };
 }
 
+/**
+ * V2.2 · destaque do modelo de aquisição na visita. Com o cadastro feito durante a visita, o objetivo
+ * deixa de ser o cadastro e vira o 1º pedido, ali, com ele (o case põe a 1ª compra "no app, com apoio").
+ */
+export function destaqueAquisicao(tipo, cadastroNaVisita = false) {
+  const c = cesta(tipo);
+  const resumo = `${c.titulo} (${c.itens.slice(0, 3).map((i) => i.nome.split(' ')[0]).join(', ')}…)`;
+  if (cadastroNaVisita) {
+    return {
+      titulo: 'Cadastro feito · próximo passo: 1º pedido agora, com ele.',
+      texto: `Monte o pedido no app com a cesta de entrada: ${resumo}. Não tem pedido mínimo: um pedido pequeno já vale.`,
+    };
+  }
+  return {
+    titulo: 'Aquisição · objetivo: cadastro no app, agora.',
+    texto: `Cadastro no celular do dono; no fim, ele marca "Vendedor da Praso" em "Como você conheceu?". Cesta de entrada: ${resumo}. Os 7 dias para pagar dependem da análise de crédito: não prometa.`,
+  };
+}
+
 /** Modelo indicado para o estado do ponto. */
 export function modeloPara(estado) {
   if (estado === 'churn') return 'reconquista';
