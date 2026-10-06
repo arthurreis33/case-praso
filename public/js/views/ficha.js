@@ -135,12 +135,18 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
         ${sit.estado === 'cadastrado_sem_compra' ? '<div class="caixa destaque"><b>Cadastro feito, falta a 1ª compra.</b> Ajude a fazer o primeiro pedido no app, com a cesta abaixo.</div>' : ''}
         <h2>Para o cadastro, o dono precisa ter em mãos</h2>
         <ul class="checklist">
-          <li>Representante legal do CNPJ presente (uma conta por CNPJ, aberta por ele)</li>
-          <li>CNPJ e e-mail do estabelecimento</li>
-          <li>Para pedir prazo: dados do responsável financeiro</li>
-          <li>Para pedir prazo: chave PIX do CNPJ</li>
+          <li>Quem abre é o representante legal do CNPJ (uma conta por CNPJ)</li>
+          <li>CNPJ ativo, endereço do estabelecimento, telefone e e-mail</li>
+          <li>Dados do representante legal</li>
         </ul>
-        <div class="aviso-fixo" role="note">Prazo depende de análise de crédito; não prometa.</div>
+        <h3>Para comprar a prazo (opcional)</h3>
+        <ul class="checklist">
+          <li>E-mail e celular do responsável financeiro</li>
+          <li>Chave PIX da conta do CNPJ</li>
+          <li>Autorizar a consulta ao SCR do Banco Central</li>
+        </ul>
+        <div class="aviso-fixo" role="note">Prazo depende de análise de crédito: não prometa. Se o dono viu "pague daqui a uma semana" no app, diga que o prazo existe, mas sai depois da análise.</div>
+        ${!p.cnpj ? '<p class="dica">Sem CNPJ, a Praso aceita cadastro com CPF a critério dela. Frete grátis e prazo são para CNPJ.</p>' : ''}
         ${cestaHtml(p.tipo, esc, { demo: modoDemo() })}`;
     }
     if (sit.estado === 'ativacao' || sit.estado === 'ativacao_vencida') {

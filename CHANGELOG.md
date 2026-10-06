@@ -54,6 +54,17 @@ Revisão de produto, arquitetura e design para o teste com vendedores na rua. Ne
 - **Ícones Lucide** nas abas, nos selos de estado, nas ações do card e nos botões principais.
 - O service worker guarda fonte, logo e ícones: o app abre igual sem rede.
 
+### Fatia 5 · Aderência à Praso
+- **Checklist de cadastro igual aos termos de uso:**
+  - para abrir a conta: representante legal, CNPJ ativo, endereço, telefone, e-mail e dados do representante;
+  - para comprar a prazo (opcional): responsável financeiro, PIX do CNPJ e autorização da consulta ao SCR;
+  - para quem não tem CNPJ, um aviso de que a Praso aceita CPF a critério dela, sem frete grátis nem prazo garantidos.
+- **Aviso de crédito** com a resposta para quando o dono cita a propaganda do app ("pague daqui a uma semana").
+- **Mensagens de WhatsApp** com a condição do site: "Pedido até as 19h chega no dia seguinte, de segunda a sábado".
+- **Cesta de entrada:** "entre por uma necessidade só". A frase anterior, "uma categoria só", não era verdade para a cesta de fritura, que mistura óleo e batata.
+- **Catálogo de exemplo** com os nomes dos departamentos do site onde há correspondência direta.
+- Testes novos das mensagens e da cesta (67 no total).
+
 ## V2 · 05/10/2026
 
 Construída em fatias, cada uma com testes passando e verificada no Chromium a 360 px (as telas finais também a 412 px). O plano está em `docs/PLANO_V2.md`.

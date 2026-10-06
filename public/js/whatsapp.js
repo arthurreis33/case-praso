@@ -1,7 +1,7 @@
 // Mensagens prontas e cesta de entrada (seção 6.8).
 // Deep link https://wa.me/?text=… SEM número: o repositório não guarda telefone. O vendedor escolhe
 // o contato no próprio WhatsApp. Ao tocar, a plataforma grava um Contato sozinha.
-import { CESTA_ENTRADA, PRODUTO, rotuloCategoria } from './demo/catalogo.js';
+import { CESTA_ENTRADA, PRODUTO } from './demo/catalogo.js';
 import { resumoCompras } from './historico.js';
 import { nomeDe } from './store.js';
 import { dinheiro } from './ui.js';
@@ -12,7 +12,9 @@ export const MODELOS = [
   ['reconquista', 'Reconquista'],
 ];
 
-const CONDICOES = 'Sem pedido mínimo e frete grátis para CNPJ. Pedido até as 19h chega amanhã.';
+// Condições como estão em praso.com.br (06/10/2026): sem pedido mínimo, frete grátis para CNPJ e entrega no dia
+// seguinte de segunda a sábado (RM do Recife). Pedido de sábado depois das 19h chega na segunda.
+export const CONDICOES = 'Sem pedido mínimo e frete grátis para CNPJ. Pedido até as 19h chega no dia seguinte, de segunda a sábado.';
 
 export function cesta(tipo) {
   const c = CESTA_ENTRADA[tipo] || CESTA_ENTRADA.outro;
@@ -58,7 +60,7 @@ export function enviarWhatsApp(store, p, modelo) {
 export function cestaHtml(tipo, esc, { demo = false } = {}) {
   const c = cesta(tipo);
   return `<div class="caixa"><h3>Cesta de entrada · ${esc(c.titulo)}</h3>
-    <p class="sutil">Uma categoria só: ${esc(rotuloCategoria(c.categoria))}. Por quê: ${esc(c.porque)}.</p>
+    <p class="sutil">Entre por uma necessidade só, não pela loja toda. Por quê: ${esc(c.porque)}.</p>
     <ul style="margin:6px 0;padding-left:20px">${c.itens.map((i) => `<li>${esc(i.nome)} · <span class="num">${dinheiro(i.preco)}</span></li>`).join('')}</ul>
     <p class="sutil">Total de referência: <b class="num">${dinheiro(c.total)}</b>${demo ? ' (preços de exemplo)' : ''}. Confira o preço do dia no app.</p></div>`;
 }

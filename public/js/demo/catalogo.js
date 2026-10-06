@@ -1,9 +1,10 @@
 // Catálogo FICTÍCIO de produtos (SKUs, nomes e preços inventados). Serve ao seed, ao simulador,
 // à cesta de entrada e às mensagens de recompra. Em produção viria do sistema da Praso.
 export const CATEGORIAS = [
-  ['oleos_gorduras', 'Óleos e gorduras'], ['congelados', 'Batata e congelados'], ['carnes', 'Carnes e frios'],
-  ['laticinios', 'Laticínios'], ['farinhas', 'Farinhas e panificação'], ['molhos', 'Molhos e temperos'],
-  ['bebidas', 'Bebidas'], ['descartaveis', 'Descartáveis e embalagens'], ['mercearia', 'Mercearia'], ['cafe', 'Café e açúcar'],
+  // V2.1: rótulos com os nomes dos departamentos de praso.com.br onde há correspondência direta (as chaves não mudam)
+  ['oleos_gorduras', 'Óleos e gorduras'], ['congelados', 'Congelados'], ['carnes', 'Carnes, Aves e Pescados'],
+  ['laticinios', 'Frios e Queijos'], ['farinhas', 'Farinhas e panificação'], ['molhos', 'Molhos, Temperos e Conservas'],
+  ['bebidas', 'Bebidas'], ['descartaveis', 'Descartáveis e Embalagens'], ['mercearia', 'Mercearia'], ['cafe', 'Café e açúcar'],
 ];
 
 // [sku, nome, categoria, preço unitário em R$]

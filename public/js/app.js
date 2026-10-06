@@ -2,7 +2,7 @@
 // (Hoje · Mapa · Carteira · Painel) e telas por cima (ficha, visita, novo ponto, simulador).
 import { criarStore, memoriaStorage } from './store.js';
 import { adaptadorIndexedDB } from './db.js';
-import { paraJSON, paraCSV, nomeArquivo, baixar, compartilhar, podeCompartilharArquivo } from './export.js';
+import { paraJSON, paraCSV, nomeArquivo, baixar, compartilhar } from './export.js';
 import { esc, toast, quando } from './ui.js';
 import { carregarSeed } from './seed.js';
 import { renderHoje } from './views/hoje.js';
