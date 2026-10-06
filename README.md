@@ -39,7 +39,7 @@ A V2.1 é para vendedores da Praso testarem na rua. Por isso, nenhuma tela expli
 **O link para avaliar é `praso-campo-v1.vercel.app/?demo=1`.** Sem o parâmetro, o app abre vazio, como o vendedor o vê.
 
 ```bash
-npm test          # 69 testes, sem dependências (node --test)
+npm test          # 84 testes, sem dependências (node --test)
 npm run dev       # serve public/ em http://localhost:5173
 ```
 
@@ -106,6 +106,18 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 - *Ganho:* a banca vê a regra "nenhum card é movido à mão" acontecer, inclusive com o tempo, sem depender do sistema da Praso.
 - *Custo:* os eventos são disparados à mão. Tudo o que é simulado aparece marcado: o selo do relógio no topo, "demonstração" na IA e "fictício" nos dados.
 
+**8. O campo calibra regras, não dados (V2.2).** O que se aprende na rua entra como regra e texto em `config.js` e nos catálogos, nunca como ponto na carteira. A plataforma é um cenário simulado: as regras funcionam de verdade, e os valores são palpites assumidos.
+- *Ganho:* uma observação muda o comportamento de todos os pontos de uma vez, e os dados de exemplo continuam fictícios.
+- *Custo:* as visitas de campo foram poucas para recalibrar com segurança. Picos, funcionamento, papéis, motivos, canais e cesta seguem marcados `PALPITE`, e a calibração ficou para os próximos passos.
+
+**9. O motivo vira a próxima ação (V2.2).** O motivo de não avanço era gravado e só aparecia no histórico. Agora cada motivo tem, em `CONFIG.motivos`, uma próxima ação, um argumento e um porquê.
+- *Ganho:* a etapa de decisor para cadastro passa a mudar a tela de amanhã. Ela gera um retorno no prazo do motivo, mostra "Da última vez" na ficha e no card e tira o "Não é ICP" da lista. O gestor vê por que cada vendedor perde e separa motivo do cliente de motivo de execução.
+- *Custo:* um toque a mais na visita sem avanço. Os prazos e as frases ainda não foram validados, e um motivo mal marcado gera um retorno errado (o vendedor troca com um toque).
+
+**10. O cadastro não é o fim da visita (V2.2).** Com o cadastro feito durante a visita, o objetivo vira o 1º pedido ali, com a cesta de entrada. O cadastrado recente sobe na rota, e o antigo esfria.
+- *Ganho:* segue o case, que põe a 1ª compra "no app, com apoio". A visita aproveita o momento em que o dono já está com o app aberto.
+- *Custo:* a visita que dá certo fica mais longa. Os multiplicadores (1,8, 1,3 e 0,6) são PREMISSA, sem dado por trás.
+
 **Outras decisões:**
 - **A plataforma só pede o que não sabe.** Decisor e janela já registrados no ponto vêm pré-preenchidos na visita. Nesse caso, o registro costuma ser um toque só (o resultado).
 - **"Ponto fechado" e não "Fechado".** A chave `fechado` da V1 quer dizer *estabelecimento fechado*. Sem a troca de rótulo, a banca leria "Fechado" como venda.
@@ -138,6 +150,8 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 | "Conquistado" para a pontuação | Quando vira recorrente, porque a meta é recorrência e não cadastro | `config.js → conquista_em` |
 | Ativação vencida que volta a comprar | Continua vencida até completar 120 dias sem comprar (vira churn) | `estados.js` |
 | Pedido via WhatsApp conta como autônomo? | Hoje, só a flag decide | integração |
+| Prazo de retorno por motivo de não avanço (V2.2) | De 2 a 7 dias, na janela quando o motivo pede; "Não é ICP" sai da lista | `config.js → motivos` |
+| Chance do cadastrado pela idade do cadastro (V2.2) | ×1,8 até 3 dias, ×1,3 até 10 dias, ×0,6 depois de 30 dias sem compra | `config.js → chance` |
 
 ## Estrutura
 

@@ -456,6 +456,23 @@ Duas fases com uma trava no meio: a Fase A não depende do campo, e a Fase B só
 | Schema e export | Sem mudança |
 | Service worker | `VERSAO` trocada para `campo-v2-2-2026-10-06-1` |
 
+**Fase B, o que fechou (cenário simulado, sem calibração de campo):**
+- **B1 · Regras como palpite.** As visitas de campo foram poucas para recalibrar. Nenhum valor mudou: todos ganharam a marca `PALPITE (V2.2)`, e a calibração foi para "próximos passos" no README.
+- **B2 · O motivo devolve algo.**
+  - `CONFIG.motivos` define a próxima ação, o argumento e o porquê de cada motivo.
+  - A linha "Da última vez" aparece na ficha e no card do Hoje.
+  - "Não é ICP" sai da lista do dia.
+  - A Equipe ganhou a seção "Por que não avançou", e a Semana, os 3 motivos da semana.
+  - O seed ganhou 6 leads com motivo e retorno hoje ou amanhã, e a equipe de exemplo, motivos determinísticos.
+- **B3 · Do cadastro ao 1º pedido.** Com o cadastro feito na visita, o destaque troca para o 1º pedido com a cesta de entrada. A próxima ação passa a ser "Acompanhar 1ª compra" no dia seguinte. A chance sobe até 10 dias depois do cadastro e cai depois de 30 dias sem compra.
+
+| Verificação da Fase B | Resultado |
+|---|---|
+| `npm test` | 84 testes passando (eram 69). Novos: `motivos.test.mjs` e `cadastro.test.mjs` |
+| Playwright a 360 e 412 px, às 10h e à noite | Todas as telas, a ficha com motivo, a ficha "Não é ICP" e a visita com motivo: sem rolagem horizontal, sem erro no console e com alvos de 48 px ou mais |
+| Schema e export | Sem mudança. Chaves, colunas e catálogos são os mesmos |
+
 **Ficou de fora da Fase A:**
 - **A coluna "Registro (s)" da Equipe mostra a média, não a mediana.** Com a distribuição pedida, o "Você" aparece com cerca de 22 s, ainda acima da meta de 20 s. A mediana do seed fica perto de 18 a 20 s. Mudar o cálculo do painel não estava no escopo.
-- **Fase B (B1 a B3).** Espera as notas de campo.
+- **Card do Hoje com 4 linhas.** "Da última vez" vira uma 4ª linha quando há motivo, como o prompt pede. Isso quebra a regra de no máximo 3 linhas da V2.1.
+- **Aviso duplicado na visita.** Com o cadastro feito, o destaque novo e o aviso antigo ("Cadastro feito no app durante a visita") aparecem juntos. O aviso antigo ficou porque o prompt não fala dele.

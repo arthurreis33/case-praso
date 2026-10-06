@@ -19,6 +19,11 @@ Cenário simulado: as regras são implementadas de verdade, e os valores são pa
   - **Próxima ação:** "Acompanhar 1ª compra" no dia seguinte, com o porquê "se não pediu na visita".
   - **Prioridade:** duas regras **PREMISSA** em `config.js`. `chance.sobe.cadastro_recente` multiplica a chance por 1,8 até 3 dias depois do cadastro e por 1,3 até 10 dias. `chance.cai.cadastro_antigo` multiplica por 0,6 depois de 30 dias sem compra. O motivo aparece no card: "cadastrou há 2 dias: a 1ª compra é agora" ou "cadastrado há 40 dias sem compra".
   - **Testes:** `tests/cadastro.test.mjs` cobre os limites da chance (0, 3, 4, 10, 11, 30 e 31 dias) e a troca do destaque quando o cadastro acontece na visita.
+- **Fechamento da Fase B:**
+  - **README:** três decisões novas, cada uma com ganho e custo ("o campo calibra regras, não dados", "o motivo vira a próxima ação" e "o cadastro não é o fim da visita"), e duas premissas novas na tabela.
+  - **Ficha:** com "Não é ICP" na última visita, a próxima ação mostra "Sem próxima ação".
+  - **Auditoria e service worker:** seção V2.2 da auditoria atualizada e `VERSAO` trocada.
+  - **Verificação:** a 360 e 412 px, de dia e à noite.
 
 ## V2.2 · Fase A · 06/10/2026
 

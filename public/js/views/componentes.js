@@ -17,6 +17,8 @@ export function proximaAcao(store, p, sit = store.situacao(p.id)) {
     const atrasado = new Date(p.retorno_sugerido) < agora;
     return { tipo: 'retorno', quando: p.retorno_sugerido, texto: atrasado ? `Retornar (atrasado: era ${quando(p.retorno_sugerido, agora)})` : `Retornar ${quando(p.retorno_sugerido, agora)}` };
   }
+  // V2.2: "Não é ICP" na última visita = sem próxima ação (o ponto sai da lista do dia)
+  if (motivoDaVisita(ult)?.chave === 'nao_icp') return { tipo: 'nenhuma', texto: 'Sem próxima ação: não é ICP' };
   if (pa?.tipo && pa.tipo !== 'nenhuma' && (!pa.data_hora || new Date(pa.data_hora) >= new Date(agora.getTime() - 86400000))) {
     return { tipo: pa.tipo, quando: pa.data_hora, texto: `${rotulo(PROXIMAS_ACOES, pa.tipo)}${pa.data_hora ? ` ${quando(pa.data_hora, agora)}` : ''}` };
   }
