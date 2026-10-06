@@ -416,3 +416,24 @@ As maquetes de Hoje e da ficha são os próprios prints da V2.1 (`docs/prints/v2
 3. **Primeira abertura.** Vendedor de teste começa com a carteira vazia (minha proposta) ou com os dados de exemplo?
 4. **Exportar fora do topo.** Isso contraria o RNF06 da V1 ("sempre visível"). Proponho que o aviso de visitas sem backup no Hoje cumpra esse papel.
 5. **Nomes dos estados.** "Cadastrado", "Ativando", "Vencido" e "Churn", com "Oportunidade" como grupo. É assim que o time fala?
+
+---
+
+## Status depois da V2.1 (06/10/2026)
+
+Os 19 itens da lista foram feitos, em 5 fatias com commit próprio (ver `CHANGELOG.md`). A pedido do Arthur, a correção foi junto com a auditoria, sem esperar aprovação.
+
+| Verificação | Resultado |
+|---|---|
+| `npm test` | 67 testes passando (eram 61). Novos: modo demonstração, mensagens e cesta |
+| Playwright a 360 e 412 px | Sem rolagem horizontal e sem erro no console. Todos os alvos têm 48 px ou mais, inclusive os pinos e o zoom do mapa |
+| Elementos com cara de clicável | Todo nome de ponto abre a ficha. Selos, quadros e caixas perderam a cara de botão |
+| Offline | Abre sem rede, com fonte e logo, registra visita, recarrega e o dado continua lá |
+| Modelo de dados e export | Sem mudança. Os rótulos trocaram e as chaves ficaram |
+
+Prints: `docs/prints/v2.1/antes/`, `docs/prints/v2.1/depois/`, `comparacao-hoje.png` e `comparacao-ficha.png`.
+
+**O que ficou de fora:**
+- **Limite de crédito na ficha.** Depende de integração e de campo novo no modelo.
+- **Tipo "Açaí e Sorvetes" e outras categorias do app.** Pede chave nova no catálogo de tipos.
+- **Teste em Android real e iPhone.**

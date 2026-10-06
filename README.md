@@ -1,4 +1,4 @@
-# Campo Praso · V2
+# Campo Praso · V2.1
 
 Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outubro de 2026.
 
@@ -11,11 +11,24 @@ Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outub
 5. Funciona offline e com uma mão, e mostra o funil do vendedor contra o quartil de cima.
 
 **Link:** `praso-campo-v1.vercel.app` (o mesmo domínio da V1; a V2 migra sozinha os dados do aparelho).
+**Para avaliar com dados de exemplo:** `praso-campo-v1.vercel.app/?demo=1`.
+
+## O que mudou na V2.1
+
+A V2.1 é para vendedores da Praso testarem na rua. Por isso, nenhuma tela explica a si mesma: as decisões ficam neste README e em `docs/AUDITORIA_V2.md`, que tem a auditoria completa e a lista priorizada. Nenhuma função foi apagada; o que saiu da tela mudou de lugar.
+
+- **Hoje:** a rota aparece logo abaixo do título. O que está fora da rota (retornos, recompras vencendo, pontos para conhecer) fica em chips, e cada card tem no máximo 3 linhas.
+- **Perfil** (ícone do topo): Minha rota, Backup (o antigo "Exportar"), Visão do gestor, Dados de exemplo e Modo demonstração.
+- **Modo demonstração:** `?demo=1`, 5 toques seguidos na logo ou Perfil. Só nele aparecem o simulador, o relógio e as marcas de dado de exemplo. Sem ele, a primeira abertura começa com a carteira vazia e boas-vindas.
+- **Navegação:** toda tela por cima tem voltar no topo, todo ponto mostrado abre a ficha, e os links para a Carteira chegam já filtrados.
+- **Identidade da Praso:** logo, azul `#2053CE`, Inter local e ícones Lucide.
+- **Termos do vendedor:** Cadastrado, Ativando, Vencido, Churn, "pelo app", "pt prováveis". As chaves e o export não mudam.
+- **Cadastro real:** o checklist da ficha segue o fluxo do app da Praso, com destaque para marcar "Vendedor da Praso" em "Como você conheceu?".
 
 ## Como rodar
 
 ```bash
-npm test          # 61 testes, sem dependências (node --test)
+npm test          # 67 testes, sem dependências (node --test)
 npm run dev       # serve public/ em http://localhost:5173
 ```
 
@@ -27,27 +40,27 @@ GPS e microfone só funcionam em HTTPS ou em `localhost`. No celular, use o link
 
 ## Demonstração em 3 minutos (simulador)
 
-Quem abre o link pela primeira vez já encontra 210 pontos fictícios em Boa Viagem, Pina e Imbiribeira. O **simulador** fica no ícone de engrenagem do topo.
+Abra o link com `?demo=1`: o app carrega 210 pontos fictícios em Boa Viagem, Pina e Imbiribeira. O **simulador** fica em Perfil → Modo demonstração → Abrir o simulador. Sem `?demo=1`, o app abre como o vendedor vê; para ver os dados de exemplo, toque em "Ver com dados de exemplo" nas boas-vindas.
 
-1. **Hoje:** veja os três blocos fixos (retornos com hora, recompra vencendo, pontos novos) e a lista do dia com motivo e hora prevista. Toque em "Tirar" num ponto: a rota é recalculada. Depois da jornada, o Hoje mostra o plano de amanhã.
+1. **Hoje:** veja a rota com hora e motivo e, acima dela, os chips do que ficou fora (retornos, recompras vencendo, pontos para conhecer). Toque em "Tirar" num ponto: a rota é recalculada. Depois da jornada, o Hoje mostra o plano de amanhã.
 2. **Visita:**
    - Abra um lead e faça o check-in.
    - Marque "Falou com decisor". O decisor e a janela já vêm do ponto, quando conhecidos.
    - Veja a próxima ação sugerida, com o porquê, e confirme com um toque.
    - Grave uma nota de voz: no modo demonstração, a IA sugere os campos e você confirma com um toque.
 3. **Cadastro detectado:**
-   - Ainda na visita, toque em "simular cadastro feito (demo)" e dispare **Cadastro feito**.
-   - Volte à Carteira, no modo Funil. O card está na etapa 4, com o selo "avançou: cadastro detectado".
+   - Ainda na visita, toque em "Demonstração: simular cadastro feito" e dispare **Cadastro feito**.
+   - Volte à Carteira, no modo Funil. O card está na etapa Cadastro, com o selo "avançou: cadastro detectado".
 4. **Relógio:**
    - No simulador, escolha um ponto em ativação, dispare **Pedido assistido** e depois **Pedido autônomo** duas vezes: ele vira Recorrente e soma pontos no Painel.
-   - Toque em **+46 dias**: os pontos em ativação sem a 3ª compra autônoma viram "Ativação vencida".
-   - Toque em **+30** algumas vezes: quem passa de 120 dias sem comprar vira "Oportunidade (churn)".
+   - Toque em **+46 dias**: os pontos em ativação sem a 3ª compra autônoma viram "Vencido".
+   - Toque em **+30** algumas vezes: quem passa de 120 dias sem comprar vira "Churn".
 5. **Ficha de churn:** histórico de compras, top 5 itens, o que ele parou de comprar e o roteiro de reconquista, que começa pela categoria que mais comprava.
 6. **Mapa:**
    - Segure um pino para arrastá-lo e confirme.
    - Segure no mapa para criar um ponto ali.
    - Ligue a camada "Desconhecidos".
-7. **Painel:** os pontos da semana contra a meta, o funil contra o quartil de cima e, na "Visão gestor", o que os que convertem o dobro fazem diferente.
+7. **Semana:** os pontos da semana contra a meta e o funil contra os melhores do time. Em **Perfil → Visão do gestor**, o que os que convertem o dobro fazem diferente.
 
 Em produção, cadastro, pedido e pagamento viriam da **integração com o sistema de pedidos**. O simulador existe para mostrar que o card se move sozinho.
 
@@ -87,6 +100,9 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 - **"Ponto fechado" e não "Fechado".** A chave `fechado` da V1 quer dizer *estabelecimento fechado*. Sem a troca de rótulo, a banca leria "Fechado" como venda.
 - **Plano de amanhã à noite.** A partir de 1h30 antes do fim da jornada, o Hoje mostra o plano do dia seguinte. Quem abrir o link à noite vê um plano, e não uma lista vazia.
 - **Retorno combinado vale mais que o horário padrão do tipo.** O horário de funcionamento registrado é regra. O padrão do tipo é palpite e perde para o que o vendedor combinou ou registrou.
+- **Duração da visita:** a média medida no RF11 (a partir de 3 visitas) ou o padrão de `config.js`. Ela aparece em Perfil → Minha rota.
+- **Rótulos de estado (V2.1):** a tela mostra Lead · Cadastrado · Ativando · Recorrente · Vencido · Churn. "Oportunidade", do case, aparece como explicação de Cadastrado e de Churn. A chave interna e o export continuam iguais.
+- **Modo demonstração em vez de rótulo "fictício" por toda parte (V2.1):** o vendedor de teste não vê simulador nem marca de demo. Quem avalia abre com `?demo=1`.
 - **Stack mantida:** HTML, CSS e JS puros, sem build. Nada obrigatório exigiu React, e um build acrescentaria risco ao service worker, a parte mais fácil de quebrar offline.
 
 ## Premissas a validar com o gestor
@@ -106,7 +122,10 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 ```
 public/                     o app (é o que vai ao ar)
   index.html, styles.css, sw.js, manifest.webmanifest, icon.svg
+  img/                      logo e ícone do app, recortados do logo_praso.png do Project
+  fonts/                    Inter Variable (OFL 1.1), a fonte do site da Praso
   vendor/leaflet/           Leaflet 1.9.4 (BSD-2)
+  vendor/lucide/LICENSE     ícones Lucide (ISC), embutidos em js/icones.js
   js/config.js              TODAS as regras ajustáveis (pesos, picos, janelas, limiares, ciclo)
   js/estados.js             motor de estados e etapas (função pura)
   js/prioridade.js          motor de sugestão: pontos esperados + motivo
@@ -117,11 +136,12 @@ public/                     o app (é o que vai ao ar)
   js/whatsapp.js            mensagens prontas e cesta de entrada
   js/painel.js              métricas do vendedor e do gestor (equipe fictícia)
   js/seed.js · demo/        dados e catálogo fictícios
-  js/views/                 hoje, mapa, carteira, ficha, visita, novo, painel, sim, descobrir
+  js/demo.js                modo demonstração (?demo=1, 5 toques na logo, Perfil)
+  js/views/                 hoje, mapa, carteira, ficha, visita, novo, painel (Semana e Equipe), perfil, sim, descobrir
 api/transcrever.js          função serverless: transcrição + extração por LLM (chave só no servidor)
 tests/                      node --test: estados, rota, prioridade, store, migração, export, voz
 scripts/h2_distancias.mjs   H2 em lote a partir do export JSON (V1 ou V2)
-docs/                       PLANO_V2.md e a proposta do cruzamento Receita + Overture
+docs/                       PLANO_V2.md, AUDITORIA_V2.md (V2.1), prints/v2.1 (antes e depois) e a proposta Receita + Overture
 ```
 
 ## Modelo de dados (schema 2)
@@ -137,7 +157,7 @@ A entidade central é o **Ponto**, com estado e etapa. Visitas, pedidos, contato
 
 **Migração:** na primeira abertura no mesmo domínio, a V2 lê a chave `praso_campo_v1`, migra e guarda no IndexedDB. A chave da V1 fica intacta. "Importar backup" aceita JSON da V1 e da V2. Campos da V1 sem par na V2 ficam com o sufixo `_v1`.
 
-**Export:** o JSON traz o estado completo (`schema_version: 2`). O CSV tem uma linha por visita: as 55 colunas da V1 vêm primeiro, com os mesmos nomes e na mesma ordem, e as da V2 (`v2_*`) vêm depois. Atenção: `ponto_estado` passa a usar os 6 estados da V2. Há "Compartilhar CSV" e "Compartilhar JSON" no menu do sistema.
+**Export:** fica em Perfil → Backup. O JSON traz o estado completo (`schema_version: 2`). O CSV tem uma linha por visita: as 55 colunas da V1 vêm primeiro, com os mesmos nomes e na mesma ordem, e as da V2 (`v2_*`) vêm depois. Atenção: `ponto_estado` passa a usar os 6 estados da V2. Há "Compartilhar planilha" e "Compartilhar backup" no menu do sistema. A V2.1 não mudou o modelo nem o export.
 
 **H1 e H2 sem campo extra:**
 - O tempo do núcleo (H1) é medido do primeiro toque até salvar.
@@ -152,7 +172,7 @@ A entidade central é o **Ponto**, com estado e etapa. Visitas, pedidos, contato
 
 ## Fora do escopo (e próximos passos)
 
-- Login real e múltiplos usuários. O vendedor é fixo e a visão de gestor é um seletor.
+- Login real e múltiplos usuários. O vendedor é fixo, e a visão do gestor abre pelo Perfil (em produção, vira papel do login).
 - Backend e sincronização entre aparelhos.
 - Integração real com pedidos e crédito (fica no simulador).
 - Google Places, solver de rota externo e modelo preditivo.
