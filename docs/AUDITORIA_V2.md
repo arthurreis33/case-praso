@@ -437,3 +437,25 @@ Prints: `docs/prints/v2.1/antes/`, `docs/prints/v2.1/depois/`, `comparacao-hoje.
 - **Limite de crédito na ficha.** Depende de integração e de campo novo no modelo.
 - **Tipo "Açaí e Sorvetes" e outras categorias do app.** Pede chave nova no catálogo de tipos.
 - **Teste em Android real e iPhone.**
+
+---
+
+## V2.2 (06/10/2026)
+
+Duas fases com uma trava no meio: a Fase A não depende do campo, e a Fase B só começa com as notas de campo do Arthur.
+
+**Fase A, o que fechou:**
+- **A1 · Seed coerente com a H1.** O registro do "Você" no exemplo tinha média perto de 42 s, contra a meta de menos de 20 s. Agora 70% das visitas ficam entre 10 e 22 s e 30% entre 23 e 45 s, e o seed continua determinístico (`tests/seed.test.mjs`).
+- **A2 · "Oportunidades" na Carteira.** O chip liga Cadastrado e Churn juntos, e o link `#/carteira?filtro=oportunidade` abre a Lista assim. Chaves e rótulos não mudaram.
+- **A3 · README.** Novas seções "A aposta" e "Como provar que funciona", e o link de avaliação com `?demo=1` em "Como rodar".
+
+| Verificação | Resultado |
+|---|---|
+| `npm test` | 69 testes passando (eram 67). Novos: faixa do tempo de registro do seed e determinismo |
+| Playwright a 360 e 412 px | Hoje, Mapa, Carteira (com e sem o filtro de oportunidade), Semana, Perfil, Equipe, Descobrir, Novo ponto e ficha: sem rolagem horizontal, sem erro de script e com todos os alvos de 48 px ou mais. O único erro de rede é o dos blocos do mapa, que o ambiente de teste não alcança |
+| Schema e export | Sem mudança |
+| Service worker | `VERSAO` trocada para `campo-v2-2-2026-10-06-1` |
+
+**Ficou de fora da Fase A:**
+- **A coluna "Registro (s)" da Equipe mostra a média, não a mediana.** Com a distribuição pedida, o "Você" aparece com cerca de 22 s, ainda acima da meta de 20 s. A mediana do seed fica perto de 18 a 20 s. Mudar o cálculo do painel não estava no escopo.
+- **Fase B (B1 a B3).** Espera as notas de campo.
