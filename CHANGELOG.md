@@ -1,5 +1,9 @@
 # Changelog
 
+## V2.2 · Fase A · 06/10/2026
+
+- **Seed coerente com a H1:** o tempo de registro do "Você" no exemplo saía de `r.int(14, 70)`, com média perto de 42 s, contra a meta de menos de 20 s da própria H1. Agora 70% das visitas ficam entre 10 e 22 s e 30% entre 23 e 45 s (mediana perto de 18 s). Continua determinístico, e `tests/seed.test.mjs` cobre a faixa e a repetição.
+
 ## V2.1.1 · 06/10/2026
 
 - **Correção:** o Mapa quebrava com "L.divIcon is not a function" sempre que a carteira tinha um ponto sem localização. A função que desenha o pino tinha o mesmo nome do ícone importado e o escondia. Ela foi renomeada para `iconePino`, e um teste no navegador (`qa/mapa_sem_pino.mjs`) passou a cobrir o caso.

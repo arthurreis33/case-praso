@@ -9,7 +9,7 @@ import { proximaOcorrencia } from './rules.js';
 import { DIA_MS } from './estados.js';
 import { tempos } from './migrar.js';
 
-export const SEED_VERSAO = 'seed-v2-1';
+export const SEED_VERSAO = 'seed-v2-2';
 
 export function rng(semente = 42) {
   let a = semente >>> 0;
@@ -145,7 +145,9 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
   function visita(p, ms, { resultado, tipo = 'aquisicao', faixas = [], dias = [], motivo = null, proxima = null, voz = null }) {
     const durMin = r.int(6, 24);
     const nIni = ms + r.int(1, 4) * 60000;
-    const nucleoS = r.int(14, 70);
+    // V2.2: o tempo de registro do "Você" segue a meta da H1 (< 20 s). Mediana perto de 18 s:
+    // 70% entre 10 e 22 s e 30% na cauda, entre 23 e 45 s. Continua determinístico pela semente.
+    const nucleoS = r.chance(0.7) ? r.int(10, 22) : r.int(23, 45);
     const v = {
       id: id('vs-'), ponto_id: p.id, vendedor_id: vendedorId, tipo, estado_no_checkin: null, planejada_para: null,
       checkin: { em: iso(ms), lat: null, lng: null, precisao_m: r.int(5, 30), gps_erro: null, gps_em: iso(ms + 4000), distancia_pino_m: r.int(3, 60) },
