@@ -22,7 +22,8 @@ Fontes: [praso.com.br](https://praso.com.br/), [cadastro](https://praso.com.br/a
 
 | Tema | O que está no site |
 |---|---|
-| Cadastro | "Criar conta · Passo 1 de 2 · Estabelecimento · CNPJ". Há também "Não tem CNPJ? Clique aqui para se cadastrar usando o seu CPF". O passo 2 só aparece depois de digitar um CNPJ válido, e não o abri. |
+| Cadastro (prints do Arthur, 06/10) | Sete passos: (1) e-mail para criar ou acessar a conta; (2) nome e WhatsApp, aceitando os termos; (3) nome do estabelecimento e CNPJ, ou CPF com data de nascimento; (4) endereço de entrega com busca, pino confirmado no mapa ("Seu pedido será entregue aqui"), número, complemento, ponto de referência e bairro; (5) "Como você conheceu a Praso?", com as opções Vendedor da Praso, Indicação de Amigo, Google, Instagram e Outro; (6) categoria (Restaurante, Açaí e Sorvetes, Comércio e Revenda, Bar e Petiscos, Barraca de Praia, Cafeteria…); (7) tipo dentro da categoria. Não pede documento nem dados do representante, e não tem etapa de crédito. |
+| CPF × CNPJ | Na tela do CPF: "Cadastre-se com CNPJ e garanta ofertas de boas-vindas, isenção de taxa de serviço e 7 dias para pagamento, mediante análise de crédito". |
 | Quem pode abrir | Pela regra dos termos: CNPJ ativo, uma conta por CNPJ, cadastro feito por quem representa a empresa. CPF é aceito a critério da Praso. |
 | Dados pedidos | Pelos termos: CNPJ, razão social, endereço, telefone, e-mail e dados do representante legal. |
 | Crédito e prazo | Pelos termos: crédito a critério da Praso, depois de análise (cadastro, bureaus, SCR). O limite pode ser reduzido ou cancelado. O boleto vai até 60 dias. Já a App Store anuncia "compre hoje e pague daqui a uma semana". |
@@ -39,8 +40,8 @@ Fontes: [praso.com.br](https://praso.com.br/), [cadastro](https://praso.com.br/a
 
 | O que o app diz | O que o site diz | Veredito | Fonte |
 |---|---|---|---|
-| Checklist da ficha: representante legal presente; CNPJ e e-mail; para prazo, dados do responsável financeiro e chave PIX do CNPJ | Cadastro em 2 passos. Pede CNPJ, razão social, endereço, telefone, e-mail e dados do representante legal. Para prazo, pede e-mail e celular do responsável financeiro, PIX do CNPJ e consentimento para consulta ao SCR | **Ajustar (P1):** faltam telefone, endereço e o consentimento do SCR. Também falta dizer que sem CNPJ dá para abrir com CPF, mas sem frete grátis garantido e com prazo só por exceção | termos, cadastro |
-| "Prazo depende de análise de crédito; não prometa" | Crédito a critério da Praso, até 60 dias, revogável. A App Store promete "pague daqui a uma semana" | **Ok**, com um ajuste: o vendedor precisa de uma resposta para quando o dono citar a propaganda ("o prazo existe, mas sai depois da análise") | termos, App Store |
+| Checklist da ficha: representante legal presente; CNPJ e e-mail; para prazo, dados do responsável financeiro e chave PIX do CNPJ | O app pede, em ordem: e-mail, nome e WhatsApp, estabelecimento e CNPJ, endereço com o pino no mapa, "Como conheceu a Praso?" e categoria. Os dados do responsável financeiro e o PIX aparecem nos termos para o crédito, não no cadastro | **Ajustado (P1):** o checklist vira o passo a passo real. O destaque é marcar **"Vendedor da Praso"**, que atribui o cliente ao vendedor, e conferir o pino da entrega | prints do cadastro |
+| "Prazo depende de análise de crédito; não prometa" | O cadastro com CNPJ promete "7 dias para pagamento, mediante análise de crédito". Os termos falam em até 60 dias, a critério da Praso | **Ajustado:** "Com CNPJ, o cliente pode ter 7 dias para pagar, mas só depois da análise de crédito: não prometa" | prints do cadastro, termos |
 | WhatsApp: "Sem pedido mínimo e frete grátis para CNPJ. Pedido até as 19h chega amanhã." | Igual, mas a entrega no dia seguinte vale de segunda a sábado, e João Pessoa não entrega no sábado | **Ajustar (P1):** "chega no dia seguinte (seg a sáb)". Pedido de sábado à noite chega na segunda | rodapé da página inicial |
 | Categorias do catálogo fictício (Óleos e gorduras, Batata e congelados, Carnes e frios…) | 15 departamentos com nomes próprios | **Ajustar (P2):** usar os nomes dos departamentos onde houver um correspondente direto. A cesta de fritura continua: o site tem combos de gordura com batata | página inicial |
 | Estados: Lead, Oportunidade, Em ativação, Recorrente, Ativação vencida, Oportunidade (churn) | O site não fala de funil. O case define Lead e Oportunidade, e Oportunidade cobre dois estados | **Ajustar (P1):** ver a frente D. "Oportunidade" fica como grupo; cada estado ganha um nome que o vendedor fala | case |
@@ -48,10 +49,11 @@ Fontes: [praso.com.br](https://praso.com.br/), [cadastro](https://praso.com.br/a
 
 ### O funil bate com o cadastro real?
 
-- **A etapa "Cadastro" está certa:** o site não mostra uma aprovação antes da primeira compra. O que muda o resultado é o **crédito**, que vem depois e só vale para quem quer prazo.
+- **A etapa "Cadastro" está certa:** o fluxo real termina sem nenhuma aprovação antes da primeira compra. O que muda o resultado é o **crédito**, que vem depois e só vale para quem quer prazo.
 - **Crédito não vira etapa.** Quem paga com PIX ou cartão compra sem ele, e uma etapa a mais mediria o que o vendedor não controla.
 - **Crédito vira atributo do ponto** (não pedido · em análise · aprovado com limite · negado). Isso atende H4 ajustada: "você já tem X de limite aprovado". Pede integração e campo novo no modelo, então fica como **proposta para produção**, sem mudar o schema na V2.1.
-- **Dúvida que bloqueia:** o que o passo 2 do cadastro pede. Preciso de um print do passo 2 (não criei conta).
+- **"Como você conheceu a Praso?" é dado de atribuição.** Se o dono marca "Vendedor da Praso", o cadastro é do vendedor. Em produção, essa resposta, cruzada com a visita do dia, é o evento "cadastro" do funil e a base da pontuação. Na V2.1 o passo vira item em destaque do checklist.
+- **O pino do cadastro é o da entrega.** O dono confirma o pino no mapa do app. Fazer isso junto com o vendedor, no ponto, resolve o H2 também para a logística.
 
 ---
 
@@ -409,7 +411,7 @@ As maquetes de Hoje e da ficha são os próprios prints da V2.1 (`docs/prints/v2
 
 ### Dúvidas que bloqueiam (dependem de você ou do gestor)
 
-1. **Passo 2 do cadastro.** O que ele pede? Preciso de um print.
+1. ~~Passo 2 do cadastro~~: respondido pelos prints (frente A).
 2. **Crédito.** O vendedor enxerga o limite aprovado do cliente? Se sim, a ficha ganha esse campo (muda o schema).
 3. **Primeira abertura.** Vendedor de teste começa com a carteira vazia (minha proposta) ou com os dados de exemplo?
 4. **Exportar fora do topo.** Isso contraria o RNF06 da V1 ("sempre visível"). Proponho que o aviso de visitas sem backup no Hoje cumpra esse papel.

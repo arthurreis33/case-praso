@@ -106,7 +106,8 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
   }
 
   function icone(L, estado, extra = '') {
-    return L.divIcon({ className: '', html: `<div class="pino ${extra}" style="--cor:${COR[estado]}"><b>${iconeEstado(estado)}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 34], popupAnchor: [0, -30] });
+    // alvo de toque de 48 px em volta do pino de 30 px (o pino fica com a ponta no ponto)
+    return L.divIcon({ className: 'alvo-pino', html: `<div class="pino ${extra}" style="--cor:${COR[estado]}"><b>${iconeEstado(estado)}</b></div>`, iconSize: [48, 48], iconAnchor: [24, 46], popupAnchor: [0, -40] });
   }
 
   function popupPonto(p) {
@@ -140,7 +141,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     }
     camadaDesc.clearLayers();
     for (const d of store.estado.desconhecidos.filter((x) => x.status === 'novo')) {
-      const m = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: '', html: '<div class="pino desconhecido"><b>?</b></div>', iconSize: [26, 26], iconAnchor: [13, 13] }), title: `${d.nome} · desconhecido` });
+      const m = L.marker([d.lat, d.lng], { icon: L.divIcon({ className: 'alvo-pino', html: '<div class="pino desconhecido"><b>?</b></div>', iconSize: [48, 48], iconAnchor: [24, 24] }), title: `${d.nome} · desconhecido` });
       m.bindPopup(`<div style="min-width:190px;font:15px/1.35 system-ui,sans-serif"><b>${esc(d.nome)}</b><br><span style="font-size:13px">${esc(GRUPO[d.grupo])}${d.mei != null ? ` · ${d.mei ? 'MEI' : 'não MEI'}` : ''}</span><br><span style="font-size:12px;color:#474747">${esc(d.fonte)}</span><div style="margin-top:8px"><a class="btn peq" href="#/descobrir">Ver na fila Descobrir</a></div></div>`);
       m.addTo(camadaDesc);
     }

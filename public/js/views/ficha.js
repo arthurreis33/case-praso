@@ -133,20 +133,18 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
     if (sit.estado === 'lead' || sit.estado === 'cadastrado_sem_compra') {
       return `
         ${sit.estado === 'cadastrado_sem_compra' ? '<div class="caixa destaque"><b>Cadastro feito, falta a 1ª compra.</b> Ajude a fazer o primeiro pedido no app, com a cesta abaixo.</div>' : ''}
-        <h2>Para o cadastro, o dono precisa ter em mãos</h2>
-        <ul class="checklist">
-          <li>Quem abre é o representante legal do CNPJ (uma conta por CNPJ)</li>
-          <li>CNPJ ativo, endereço do estabelecimento, telefone e e-mail</li>
-          <li>Dados do representante legal</li>
-        </ul>
-        <h3>Para comprar a prazo (opcional)</h3>
-        <ul class="checklist">
-          <li>E-mail e celular do responsável financeiro</li>
-          <li>Chave PIX da conta do CNPJ</li>
-          <li>Autorizar a consulta ao SCR do Banco Central</li>
-        </ul>
-        <div class="aviso-fixo" role="note">Prazo depende de análise de crédito: não prometa. Se o dono viu "pague daqui a uma semana" no app, diga que o prazo existe, mas sai depois da análise.</div>
-        ${!p.cnpj ? '<p class="dica">Sem CNPJ, a Praso aceita cadastro com CPF a critério dela. Frete grátis e prazo são para CNPJ.</p>' : ''}
+        <h2>Cadastro no app, passo a passo</h2>
+        <p class="dica">Leva poucos minutos. Faça junto com o dono, no celular dele.</p>
+        <ol class="checklist passos">
+          <li>E-mail do dono (cria ou acessa a conta)</li>
+          <li>Nome e WhatsApp de quem vai pedir</li>
+          <li>Nome do estabelecimento e CNPJ${p.cnpj ? ` (${esc(fmtCnpj(p.cnpj))})` : ''}</li>
+          <li>Endereço de entrega com número, complemento e ponto de referência. <b>Confira o pino no mapa:</b> é onde o pedido chega</li>
+          <li><b>"Como você conheceu a Praso?" → marque "Vendedor da Praso"</b></li>
+          <li>Categoria e tipo do estabelecimento</li>
+        </ol>
+        <div class="aviso-fixo" role="note">Com CNPJ, o cliente pode ter 7 dias para pagar, mas só depois da análise de crédito: não prometa.</div>
+        ${!p.cnpj ? '<p class="dica">Sem CNPJ, dá para cadastrar com CPF e data de nascimento. Mas com CNPJ o cliente ganha ofertas de boas-vindas, isenção da taxa de serviço, frete grátis e a chance de 7 dias para pagar.</p>' : ''}
         ${cestaHtml(p.tipo, esc, { demo: modoDemo() })}`;
     }
     if (sit.estado === 'ativacao' || sit.estado === 'ativacao_vencida') {

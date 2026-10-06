@@ -55,11 +55,9 @@ Revisão de produto, arquitetura e design para o teste com vendedores na rua. Ne
 - O service worker guarda fonte, logo e ícones: o app abre igual sem rede.
 
 ### Fatia 5 · Aderência à Praso
-- **Checklist de cadastro igual aos termos de uso:**
-  - para abrir a conta: representante legal, CNPJ ativo, endereço, telefone, e-mail e dados do representante;
-  - para comprar a prazo (opcional): responsável financeiro, PIX do CNPJ e autorização da consulta ao SCR;
-  - para quem não tem CNPJ, um aviso de que a Praso aceita CPF a critério dela, sem frete grátis nem prazo garantidos.
-- **Aviso de crédito** com a resposta para quando o dono cita a propaganda do app ("pague daqui a uma semana").
+- **Checklist de cadastro igual ao fluxo real do app** (prints de 06/10): e-mail → nome e WhatsApp → estabelecimento e CNPJ → endereço com o pino no mapa → "Como você conheceu a Praso?" → categoria. Em destaque: marcar **"Vendedor da Praso"** e conferir o pino da entrega. Sem CNPJ, o checklist explica o cadastro com CPF e o que o cliente perde.
+- **Aviso de crédito com a promessa do próprio cadastro:** "com CNPJ, 7 dias para pagar, mediante análise de crédito: não prometa".
+- O tipo "Bar" passa a se chamar "Bar e petiscos", como a categoria do app.
 - **Mensagens de WhatsApp** com a condição do site: "Pedido até as 19h chega no dia seguinte, de segunda a sábado".
 - **Cesta de entrada:** "entre por uma necessidade só". A frase anterior, "uma categoria só", não era verdade para a cesta de fritura, que mistura óleo e batata.
 - **Catálogo de exemplo** com os nomes dos departamentos do site onde há correspondência direta.

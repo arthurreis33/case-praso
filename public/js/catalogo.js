@@ -4,7 +4,7 @@
 export const TIPOS = [
   ['restaurante', 'Restaurante'], ['padaria', 'Padaria'], ['lanchonete', 'Lanchonete'],
   ['pizzaria', 'Pizzaria'], ['hamburgueria', 'Hamburgueria'], ['cafeteria', 'Cafeteria'],
-  ['bar', 'Bar'], ['outro', 'Outro'],
+  ['bar', 'Bar e petiscos'], ['outro', 'Outro'],
 ];
 
 // V2 · estado do ponto (seção 5). Chave interna (vai para o export) → rótulo curto que o vendedor fala (V2.1).

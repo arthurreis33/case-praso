@@ -47,7 +47,7 @@ function modeloVisita(store, v, p) {
   if (v.tipo === 'aquisicao') {
     const c = cesta(p.tipo);
     return `<div class="destaque-modelo"><b>Aquisição · objetivo: cadastro no app, agora.</b>
-      <div class="sutil">Cadastro com o representante legal do CNPJ. Cesta de entrada: ${esc(c.titulo)} (${esc(c.itens.slice(0, 3).map((i) => i.nome.split(' ')[0]).join(', '))}…). Prazo depende de análise de crédito; não prometa.</div></div>`;
+      <div class="sutil">Cadastro no celular do dono; no fim, ele marca "Vendedor da Praso" em "Como você conheceu?". Cesta de entrada: ${esc(c.titulo)} (${esc(c.itens.slice(0, 3).map((i) => i.nome.split(' ')[0]).join(', '))}…). Os 7 dias para pagar dependem da análise de crédito: não prometa.</div></div>`;
   }
   if (v.tipo === 'acompanhamento') {
     const ult = store.pedidosDo(p.id)[0];
