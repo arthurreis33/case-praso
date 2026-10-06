@@ -56,6 +56,7 @@ export const PERFIL_TIPO = {
 };
 
 // Cesta de entrada: 3 a 5 itens de UMA categoria, a que mais dói para o tipo (seção 6.8).
+// PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
 export const CESTA_ENTRADA = {
   lanchonete: { categoria: 'oleos_gorduras', titulo: 'Fritura', skus: ['OG02', 'OG01', 'CG01', 'CG02'], porque: 'fritura é o insumo que mais gira e mais pesa no caixa' },
   hamburgueria: { categoria: 'carnes', titulo: 'Hambúrguer', skus: ['CA01', 'LA01', 'MO02', 'DE01'], porque: 'carne e queijo são a maior parte do custo do lanche' },

@@ -1,5 +1,11 @@
 # Changelog
 
+## V2.2 · Fase B · 06/10/2026
+
+Cenário simulado: as regras são implementadas de verdade, e os valores são palpites assumidos. As visitas de campo foram poucas para calibrar.
+
+- **B1 · Regras de comportamento como palpite:** nenhum valor foi trocado. Picos e funcionamento por tipo (`config.js`), `QUEM_DECIDE`, `MOTIVOS_NAO_AVANCO`, `GATILHOS_TROCA` e `CANAIS` (`catalogo.js`) e a cesta de entrada (`demo/catalogo.js`) ganharam a marca `PALPITE (V2.2)`. A calibração foi para "próximos passos" no README.
+
 ## V2.2 · Fase A · 06/10/2026
 
 - **Seed coerente com a H1:** o tempo de registro do "Você" no exemplo saía de `r.int(14, 70)`, com média perto de 42 s, contra a meta de menos de 20 s da própria H1. Agora 70% das visitas ficam entre 10 e 22 s e 30% entre 23 e 45 s (mediana perto de 18 s). Continua determinístico, e `tests/seed.test.mjs` cobre a faixa e a repetição.

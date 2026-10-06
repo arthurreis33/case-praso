@@ -199,4 +199,5 @@ A entidade central é o **Ponto**, com estado e etapa. Visitas, pedidos, contato
 - Integração real com pedidos e crédito (fica no simulador).
 - Google Places, solver de rota externo e modelo preditivo.
 - **Cruzamento Receita + Overture** (fatia opcional): ficou como proposta em `docs/PIPELINE_RECEITA_OVERTURE.md`. No protótipo, a fila Descobrir usa desconhecidos fictícios.
+- **Calibrar as regras de comportamento com mais campo (V2.2):** picos e funcionamento por tipo, papéis de quem decide, motivos de não avanço, gatilhos de troca, canais e cesta de entrada por tipo continuam como palpites de um cenário simulado. As visitas de campo foram poucas para trocar esses valores com segurança. Estão marcados `PALPITE` em `config.js`, `catalogo.js` e `demo/catalogo.js`, e cada um muda num lugar só.
 - **Ainda não testado:** Android real, Safari do iPhone (MediaRecorder grava em `audio/mp4`) e a chamada real da transcrição com chave.

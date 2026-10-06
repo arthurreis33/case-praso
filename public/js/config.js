@@ -43,6 +43,7 @@ export const CONFIG = {
   },
 
   // Picos por tipo: o dono está ocupado; visita rende menos. Faixas em "HH:MM".
+  // PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
   pico_por_tipo: {
     restaurante: [['11:30', '14:00']],
     lanchonete: [['11:30', '13:30'], ['17:30', '19:30']],
@@ -55,6 +56,7 @@ export const CONFIG = {
   },
 
   // Funcionamento padrão quando o ponto não tem horário registrado (nunca bloqueia o fluxo).
+  // PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
   funcionamento_padrao: {
     restaurante: [['10:00', '15:30'], ['18:00', '23:00']],
     lanchonete: [['07:00', '22:00']],

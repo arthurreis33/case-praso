@@ -47,6 +47,7 @@ export const RESULTADOS = [
   ['fechado', 'Ponto fechado'], ['aberto_sem_decisor', 'Aberto sem decisor'],
   ['falou_com_decisor', 'Falou com decisor'], ['recusou', 'Recusou'],
 ];
+// PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
 export const QUEM_DECIDE = [
   ['dono', 'Dono'], ['socio', 'Sócio'], ['gerente', 'Gerente'], ['cozinheiro', 'Cozinheiro'], ['outro', 'Outro'],
 ];
@@ -71,6 +72,7 @@ export const OBSERVACOES = [
 ];
 export const QUEM_PAGA = [['decisor', 'O próprio decisor'], ['outra_pessoa', 'Outra pessoa']];
 export const QUEM_RECEBE = [['decisor', 'O próprio decisor'], ['funcionario', 'Funcionário'], ['outro', 'Outro']];
+// PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
 export const CANAIS = [
   ['telefone', 'Telefone'], ['whatsapp', 'WhatsApp'], ['representante', 'Representante'],
   ['atacarejo', 'Atacarejo'], ['app_site', 'App ou site'], ['outro', 'Outro'],
@@ -95,6 +97,7 @@ export const PRAZOS = [
 export const MODOS_REGISTRO = [['voz', 'Voz'], ['digitacao', 'Digitação'], ['misto', 'Os dois']];
 
 // V2 · motivo de não avanço (só aparece quando o resultado não é avanço)
+// PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
 export const MOTIVOS_NAO_AVANCO = [
   ['tem_fornecedor', 'Já tem fornecedor'], ['preco', 'Preço'], ['quer_prazo', 'Quer prazo'],
   ['desconfia_app', 'Desconfia de app'], ['sem_tempo', 'Sem tempo agora'], ['vai_pensar', 'Vai pensar'],
@@ -106,6 +109,7 @@ export const PROXIMAS_ACOES = [
   ['lembrete_1a_compra', 'Lembrete de 1ª compra'], ['reconquista', 'Tentar reconquista'], ['nenhuma', 'Sem próxima ação'],
 ];
 // V2 · bloco de pesquisa: o que o faria trocar de fornecedor
+// PALPITE (V2.2): cenário simulado. As visitas de campo foram poucas para calibrar este valor; ver README → próximos passos.
 export const GATILHOS_TROCA = [
   ['preco', 'Preço'], ['prazo_pagamento', 'Prazo de pagamento'], ['entrega_rapida', 'Entrega rápida'],
   ['sem_minimo', 'Sem pedido mínimo'], ['qualidade', 'Qualidade'], ['atendimento', 'Atendimento'], ['nada', 'Nada'],
