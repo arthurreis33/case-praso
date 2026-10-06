@@ -73,7 +73,7 @@ export function renderHoje({ main, barra, store, render }) {
     recompra: {
       n: recompra.length, rotulo: `${recompra.length} ${recompra.length === 1 ? 'recompra vencendo' : 'recompras vencendo'}`, ic: 'ativacao', cls: 'ativ',
       html: () => recompra.slice(0, 5).map(({ p, a }) => linhaCompacta(store, p, {
-        s: esc(a.motivos.slice(1).join(' · ')), acao: `<button type="button" class="acao-c zap" data-zap="${esc(p.id)}" aria-label="Mensagem de recompra para ${esc(nomeDe(p))} pelo WhatsApp">${icone('whatsapp')}Zap</button>`,
+        s: esc(a.motivos.slice(1).join(' · ')), acao: `<button type="button" class="acao-c zap" data-zap="${esc(p.id)}" aria-label="Mensagem de recompra para ${esc(nomeDe(p))} pelo WhatsApp">${icone('whatsapp')}WhatsApp</button>`,
       })).join('') + (recompra.length > 5 ? `<a class="btn mais-link" href="${linkCarteira('prazo')}">Ver as ${recompra.length} na Carteira</a>` : ''),
     },
     novos: {

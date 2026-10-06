@@ -1,20 +1,17 @@
 {
-  "name": "Campo Praso · V2",
-  "short_name": "Campo V2",
-  "description": "Plataforma de campo Praso · protótipo do case RevOps",
+  "name": "Campo Praso",
+  "short_name": "Campo Praso",
+  "description": "Rota do dia, visitas e carteira do vendedor Praso",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#2053CE",
   "lang": "pt-BR",
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "img/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "img/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

@@ -91,9 +91,9 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
     barra.innerHTML = `<a class="btn primaria grande" href="#/visita/${aberta.id}">Continuar visita</a>`;
   } else {
     barra.innerHTML = `
-      ${aberta ? `<a class="btn grande" href="#/visita/${aberta.id}">Visita aberta em outro ponto</a>` : '<button class="btn primaria grande" data-acao-f="checkin">Check-in</button>'}
-      <button class="btn grande" data-acao-f="whatsapp" data-modelo="${modelo}" aria-label="Enviar mensagem de ${esc(rotulo(MODELOS, modelo))} pelo WhatsApp">WhatsApp</button>
-      <a class="btn grande" href="${esc(mapsUrl(p))}" target="_blank" rel="noopener" style="flex:0 0 auto">Rota</a>`;
+      ${aberta ? `<a class="btn grande" href="#/visita/${aberta.id}">Visita aberta em outro ponto</a>` : `<button class="btn destaque grande" data-acao-f="checkin">${icone('checkin')}Check-in</button>`}
+      <button class="btn zap grande" data-acao-f="whatsapp" data-modelo="${modelo}" aria-label="Enviar mensagem de ${esc(rotulo(MODELOS, modelo))} pelo WhatsApp">${icone('whatsapp')}WhatsApp</button>
+      <a class="btn grande" href="${esc(mapsUrl(p))}" target="_blank" rel="noopener" style="flex:0 0 auto" aria-label="Rota no Google Maps">${icone('navegar')}Rota</a>`;
   }
 
   const agir = async (ev) => {
@@ -151,13 +151,13 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
         <p>${sit.estado === 'ativacao' ? `<b>${esc(sit.prazo.texto)}</b>. A 3ª precisa ser feita pelo app, sem você.` : '<b>Passou dos 45 dias sem a 3ª compra pelo app.</b>'} ${sit.compras_autonomas_ciclo} pelo app neste ciclo.</p>
         ${r ? `<div class="caixa"><b>Último pedido</b> · ${esc(data(r.ultimo_pedido.data))} · ${dinheiro(r.ultimo_pedido.valor)} · ${r.ultimo_pedido.autonomo ? 'pelo app' : 'com você'}
           <div class="sutil">${esc((r.ultimo_pedido.itens || []).map((i) => `${i.qtd}× ${i.nome}`).join(' · '))}</div></div>` : ''}
-        <button class="btn primaria" data-acao-f="whatsapp" data-modelo="recompra" style="width:100%">Mensagem de recompra (repetir o último pedido)</button>`;
+        <button class="btn zap" data-acao-f="whatsapp" data-modelo="recompra" style="width:100%">${icone('whatsapp')}Mensagem de recompra (repetir o último pedido)</button>`;
     }
     if (sit.estado === 'recorrente') {
       return `<h2>Recorrente</h2>
         ${r ? kpis(r) : ''}
         <p class="sutil">${esc(sit.prazo?.texto || '')}${sit.prazo?.dias_para_churn != null ? ` · churn em ${sit.prazo.dias_para_churn} dias sem comprar` : ''}</p>
-        <button class="btn" data-acao-f="whatsapp" data-modelo="recompra" style="width:100%">Mensagem de recompra</button>`;
+        <button class="btn zap" data-acao-f="whatsapp" data-modelo="recompra" style="width:100%">${icone('whatsapp')}Mensagem de recompra</button>`;
     }
     if (sit.estado === 'churn' && r) {
       const cat = r.top_categorias[0];
@@ -172,7 +172,7 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
         <h3>Categorias</h3>
         <table class="tabela"><tbody>${r.top_categorias.slice(0, 5).map((c2) => `<tr><td>${esc(c2.rotulo)}</td><td class="n">${pct(c2.share)}</td></tr>`).join('')}</tbody></table>
         <p class="sutil">Pagava com: <b>${esc(FORMAS_PAGAMENTO_ROTULO[r.forma_pagamento] || r.forma_pagamento || '–')}</b>.</p>
-        <button class="btn primaria" data-acao-f="whatsapp" data-modelo="reconquista" style="width:100%">Mensagem de reconquista</button>`;
+        <button class="btn zap" data-acao-f="whatsapp" data-modelo="reconquista" style="width:100%">${icone('whatsapp')}Mensagem de reconquista</button>`;
     }
     return '';
   }

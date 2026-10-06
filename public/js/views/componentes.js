@@ -13,7 +13,8 @@ export function proximaAcao(store, p, sit = store.situacao(p.id)) {
   const ult = store.visitasDo(p.id)[0];
   const pa = ult?.proxima_acao;
   if (p.status_dia === 'retornar' && p.retorno_sugerido) {
-    return { tipo: 'retorno', quando: p.retorno_sugerido, texto: `Retornar ${quando(p.retorno_sugerido, agora)}` };
+    const atrasado = new Date(p.retorno_sugerido) < agora;
+    return { tipo: 'retorno', quando: p.retorno_sugerido, texto: atrasado ? `Retornar (atrasado: era ${quando(p.retorno_sugerido, agora)})` : `Retornar ${quando(p.retorno_sugerido, agora)}` };
   }
   if (pa?.tipo && pa.tipo !== 'nenhuma' && (!pa.data_hora || new Date(pa.data_hora) >= new Date(agora.getTime() - 86400000))) {
     return { tipo: pa.tipo, quando: pa.data_hora, texto: `${rotulo(PROXIMAS_ACOES, pa.tipo)}${pa.data_hora ? ` ${quando(pa.data_hora, agora)}` : ''}` };

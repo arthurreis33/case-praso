@@ -43,6 +43,17 @@ Revisão de produto, arquitetura e design para o teste com vendedores na rua. Ne
   - Tempo: "registro", no lugar de núcleo.
 - **Mapa:** os pinos e os filtros usam ícone no lugar da letra. A legenda fica recolhida e explica cada estado. Uma linha avisa quantos pontos estão sem localização e leva à Carteira.
 
+### Fatia 4 · Design alinhado à Praso
+- **Logo da Praso** no topo, recortada do `logo_praso.png` do Project, sem redesenho. O ícone do app usa o símbolo do mesmo arquivo. O topo fica no azul da marca.
+- **Tokens:**
+  - cores: azul `#2053CE` (escuro `#123DA1`, claros `#DCE6FD` e `#EFF4FF`), amarelo `#FAD705` só no Check-in, verde `#15803D` no WhatsApp, neutros da escala cinza do site e estados com contraste ≥ 5:1;
+  - forma: raio de 8 px e sombra mínima.
+  Os valores e contrastes estão na auditoria, frente F.
+- **Inter Variable** servida localmente (`public/fonts/`, OFL 1.1), como no site.
+- **Gramática visual:** o que é clicável tem borda ou fundo azul, e os cards têm a faixa de ações à direita. Selos, quadros e caixas são informação e não têm cara de botão.
+- **Ícones Lucide** nas abas, nos selos de estado, nas ações do card e nos botões principais.
+- O service worker guarda fonte, logo e ícones: o app abre igual sem rede.
+
 ## V2 · 05/10/2026
 
 Construída em fatias, cada uma com testes passando e verificada no Chromium a 360 px (as telas finais também a 412 px). O plano está em `docs/PLANO_V2.md`.
