@@ -8,6 +8,7 @@ import { fmtPontos } from '../rules.js';
 import { pontosSemana, meuFunil, meuComportamento, recomprasEmRisco, equipeFicticia, quartilDeCima, ETAPAS_CURTAS } from '../painel.js';
 import { linhaCompacta } from './componentes.js';
 import { linkCarteira } from './carteira.js';
+import { modoDemo } from '../demo.js';
 
 const seletor = (atual) => `<div class="modo" role="group" aria-label="Visão">
   <button type="button" data-visao="painel" aria-pressed="${atual === 'painel'}">Vendedor</button>
@@ -32,20 +33,20 @@ export function renderPainel({ main, store, ir }) {
     ${seletor('painel')}
     <h2 style="margin-top:4px">Pontos da semana</h2>
     <div class="meta-barra" role="img" aria-label="${fmtPontos(sem.total)} de ${sem.meta} pontos"><span style="width:${larg(sem.total / sem.meta)}"></span></div>
-    <p style="margin:4px 0"><b class="num">${fmtPontos(sem.total)} de ${sem.meta} pt</b> <span class="sutil">· conta quando o ponto vira recorrente (3ª compra autônoma)</span></p>
+    <p style="margin:4px 0"><b class="num">${fmtPontos(sem.total)} de ${sem.meta} pt</b> <span class="sutil">· conta na 3ª compra pelo app</span></p>
     ${sem.itens.map((x) => linhaCompacta(store, x.p, { s: `+${String(x.pontos).replace('.', ',')} pt` })).join('')}
 
-    <h2>Seu funil × quartil de cima</h2>
-    <div class="leg-comp"><span><i class="i1"></i>Você</span><span><i class="i2"></i>Quartil de cima (${esc(top.nomes.join(', '))})</span></div>
+    <h2>Seu funil × os melhores do time</h2>
+    <div class="leg-comp"><span><i class="i1"></i>Você</span><span><i class="i2"></i>Os melhores (25% de cima)</span></div>
     <div class="comp" role="table" aria-label="Taxa de passagem por etapa">
       ${eu.taxas.map((t, i) => `
         <div role="rowheader" class="${pior?.i === i ? 'pior' : ''}">${esc(ETAPAS_CURTAS[i])} → ${esc(ETAPAS_CURTAS[i + 1])}</div>
-        <div class="trilho" role="cell" title="Você ${pct(t)} · quartil de cima ${pct(top.taxas[i])}">
+        <div class="trilho" role="cell" title="Você ${pct(t)} · os melhores ${pct(top.taxas[i])}">
           <div class="lb"><span class="b voce" style="width:${larg(t)}"></span><span class="val">${pct(t)}</span></div>
           <div class="lb"><span class="b top" style="width:${larg(top.taxas[i])}"></span><span class="val">${pct(top.taxas[i])}</span></div>
         </div>`).join('')}
     </div>
-    ${pior && pior.gap < -0.02 ? `<p class="insight">Onde você mais perde: <b>${esc(ETAPAS_CURTAS[pior.i])} → ${esc(ETAPAS_CURTAS[pior.i + 1])}</b>, ${Math.round(-pior.gap * 100)} pontos percentuais abaixo do quartil de cima.</p>` : '<p class="sutil">Você está no nível do quartil de cima em todas as etapas.</p>'}
+    ${pior && pior.gap < -0.02 ? `<p class="insight">Onde você mais perde: <b>${esc(ETAPAS_CURTAS[pior.i])} → ${esc(ETAPAS_CURTAS[pior.i + 1])}</b>, ${Math.round(-pior.gap * 100)} pontos percentuais abaixo dos melhores.</p>` : (eu.taxas.every((t) => t == null) ? '<p class="sutil">Seu funil aparece depois das primeiras visitas.</p>' : '<p class="sutil">Você está no nível dos melhores do time em todas as etapas.</p>')}
 
     <div class="kpis">
       <div class="kpi"><div class="v">${pct(comp.retorno_janela)}</div><div class="r">retornos na janela do decisor${comp.n_revisitas ? ` (${comp.n_revisitas} revisitas)` : ''}</div></div>
@@ -76,28 +77,28 @@ export function renderGestor({ main, store, ir }) {
   const diffs = [
     ['retorno_janela', 'dos retornos na janela do decisor', pct],
     ['voz', 'das notas por voz', pct],
-    ['nucleo_s', 's de registro (núcleo)', (x) => num(x)],
+    ['nucleo_s', 's para registrar a visita', (x) => num(x)],
     ['no_ponto_min', 'min por visita', (x) => num(x)],
   ];
 
   main.innerHTML = `
     ${seletor('gestor')}
-    <p class="sim-nota">Visão do gestor sem login, com 5 vendedores fictícios mais "Você" (dados do aparelho).</p>
+    ${modoDemo() ? '<p class="sim-nota">Equipe de exemplo: 5 vendedores fictícios e você.</p>' : ''}
     <h2>Conversão por etapa e por vendedor</h2>
-    <p class="sutil">Taxa de passagem de cada etapa para a seguinte. Ordenado pela conversão total (planejada → 3ª compra autônoma).</p>
+    <p class="sutil">Quantos passam de uma etapa para a seguinte. Do que mais converte para o que menos converte.</p>
     <div class="tabela-rolagem"><table class="tabela calor">
       <thead><tr><th style="text-align:left">Vendedor</th>${ETAPAS_CURTAS.slice(0, -1).map((e, i) => `<th title="${esc(e)} → ${esc(ETAPAS_CURTAS[i + 1])}">${i + 1}→${i + 2}</th>`).join('')}<th>Total</th></tr></thead>
       <tbody>${ord.map((v) => `<tr><td class="nome-v">${esc(v.nome)}</td>${v.funil.taxas.map(cel).join('')}${cel(v.funil.total)}</tr>`).join('')}</tbody>
     </table></div>
-    <p class="dica">1 Planejada · 2 Efetiva · 3 Decisor · 4 Cadastro · 5 1ª compra · 6 3ª autônoma. Tom mais escuro = maior taxa; o número está sempre na célula.</p>
+    <p class="dica">1 Planejada · 2 Visitada · 3 Decisor · 4 Cadastro · 5 1ª compra · 6 3ª compra pelo app</p>
 
     <h2>Comportamento</h2>
     ${razao ? `<p class="insight">Os 2 de cima (${esc(topo.map((x) => x.nome).join(', '))}) convertem <b>${num(razao, 1)}×</b> os 2 de baixo. O que fazem diferente:</p>` : ''}
     <ul style="padding-left:20px;margin:6px 0">${diffs.map(([k, txt, f]) => `<li><b>${f(med(topo, k))}</b> ${txt} contra <b>${f(med(base, k))}</b></li>`).join('')}</ul>
     <div class="tabela-rolagem"><table class="tabela">
-      <thead><tr><th>Vendedor</th><th class="n">Hora média</th><th class="n">Min no ponto</th><th class="n">Retorno na janela</th><th class="n">Nota por voz</th><th class="n">Núcleo (s)</th><th class="n">Registro no ponto</th></tr></thead>
+      <thead><tr><th>Vendedor</th><th class="n">Hora média</th><th class="n">Min no ponto</th><th class="n">Retorno na janela</th><th class="n">Nota por voz</th><th class="n">Registro (s)</th><th class="n">Registrou antes de sair</th></tr></thead>
       <tbody>${ord.map((v) => { const c = v.comportamento; return `<tr><td class="nome-v">${esc(v.nome)}</td><td class="n">${hora(c.hora_media)}</td><td class="n">${num(c.no_ponto_min)}</td><td class="n">${pct(c.retorno_janela)}</td><td class="n">${pct(c.voz)}</td><td class="n">${num(c.nucleo_s)}</td><td class="n">${pct(c.no_ponto_pct)}</td></tr>`; }).join('')}</tbody>
     </table></div>
-    <p class="dica">"Registro no ponto" = núcleo salvo antes do check-out (teste de H1). "Retorno na janela" = revisita até 60 min do horário sugerido ou dentro da janela do decisor.</p>`;
+    <p class="dica">Retorno na janela: voltou até 1 h do horário combinado ou quando o decisor costuma estar.</p>`;
   ligarSeletor(main, ir);
 }

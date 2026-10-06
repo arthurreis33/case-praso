@@ -15,6 +15,7 @@ import { sugerirProximaAcao, pedeMotivo } from '../proxima.js';
 import { cesta } from '../whatsapp.js';
 import { resumoCompras } from '../historico.js';
 import { montarGravador } from '../voz.js';
+import { modoDemo } from '../demo.js';
 
 const pedindoGps = new Set();
 const R = C.rotulo;
@@ -26,7 +27,7 @@ function htmlPesquisa(v) {
   const g = (path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), q);
   const ia = (c) => v.campos_ia?.includes(`pesquisa.${c}`);
   return `
-    <p class="dica">Opcional. Alimenta a ficha e a priorização quando existir; nada aqui bloqueia a visita.</p>
+    <p class="dica">Opcional. Nada aqui segura a visita.</p>
     ${rotuloCampo('Quem paga os fornecedores', ia('papeis.quem_paga'))}${chips('pesquisa.papeis.quem_paga', C.QUEM_PAGA, g('papeis.quem_paga'))}
     ${rotuloCampo('Canal de compra hoje', ia('ultima_compra.canal'))}${chips('pesquisa.ultima_compra.canal', C.CANAIS, g('ultima_compra.canal'))}
     ${rotuloCampo('Quantos fornecedores', ia('fornecedores.quantos'))}${chips('pesquisa.fornecedores.quantos', C.N_FORNECEDORES, g('fornecedores.quantos'), { classe: 'compacto' })}
@@ -93,7 +94,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
 
     <section class="surpresa">
       <h2>Nota do vendedor, ao sair do ponto</h2>
-      <p class="dica">É a <b>sua</b> nota sobre a visita, depois de sair. Não é gravação da conversa com o dono.</p>
+      <p class="dica">Sua nota, depois de sair. Não grave o cliente.</p>
       <div id="voz"></div>
       ${texto('nota_texto', v.nota_texto, 'Ou digite / dite pelo microfone do teclado')}
     </section>
@@ -163,8 +164,8 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
   function atualizarMotivo() {
     const cad = store.cadastroNaVisita(v);
     elCad.innerHTML = cad
-      ? '<div class="caixa destaque" role="status"><b>Cadastro detectado durante a visita.</b> O ponto avançou sozinho para a etapa 4.</div>'
-      : (v.tipo === 'aquisicao' && !v.checkout ? `<p class="dica" style="text-align:right"><a href="#/sim?p=${esc(p.id)}">simular "cadastro feito" (demo)</a></p>` : '');
+      ? '<div class="caixa destaque" role="status"><b>Cadastro feito no app durante a visita.</b> O ponto já está como Cadastrado.</div>'
+      : (v.tipo === 'aquisicao' && !v.checkout && modoDemo() ? `<a class="btn mais-link demo-link" href="#/sim?p=${esc(p.id)}">Demonstração: simular "cadastro feito"</a>` : '');
     if (pedeMotivo(v.nucleo.resultado, cad)) {
       elMot.innerHTML = `${rotuloCampo(v.nucleo.resultado === 'recusou' ? 'Por que recusou?' : 'Por que não cadastrou hoje?', ia('motivo_nao_avanco'))}${chips('motivo_nao_avanco', C.MOTIVOS_NAO_AVANCO, v.motivo_nao_avanco)}`;
     } else elMot.innerHTML = '';
@@ -201,7 +202,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
     } else if (n.inicio) {
       elRes.textContent = `Registrando desde ${hora(n.inicio)}. ${n.resultado ? 'Toque em Salvar registro.' : 'Falta o resultado.'}`;
     } else {
-      elRes.textContent = 'O relógio do registro começa no primeiro toque.';
+      elRes.textContent = 'Falta o resultado.';
     }
   }
 

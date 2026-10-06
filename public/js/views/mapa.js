@@ -46,7 +46,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     <div class="mapa-wrap"><div id="mapa" role="application" aria-label="Mapa dos pontos"></div></div>
     <div id="mapa-aviso"></div>
     <div class="legenda" aria-label="Legenda">${ESTADOS.map(([k, r]) => `<span><span class="selo-estado e-${k}" style="padding:1px"><i>${letraEstado(k)}</i></span>${esc(r)}</span>`).join('')}<span><span class="pino desconhecido" style="width:18px;height:18px;display:inline-grid"><b style="font-size:10px">?</b></span>Desconhecido</span></div>
-    <p class="dica">Segure no mapa para criar um ponto ali. Segure um pino (ou use "Corrigir pino") para arrastá-lo.</p>`;
+    <p class="dica">Segure no mapa para criar um ponto. Segure um pino para mudar de lugar.</p>`;
 
   barra.innerHTML = `<button class="btn primaria grande" data-acao-m="estou-aqui">Estou aqui: novo ponto</button><a class="btn grande" href="#/descobrir">Descobrir</a>`;
 

@@ -2,7 +2,7 @@
 // Estratégia: cache primeiro para o app; tiles do OpenStreetMap em cache separado e limitado
 // (só os já vistos, sem pré-carga em massa, conforme a política de uso dos tiles do OSM).
 // A versão nova publicada aparece no segundo carregamento. Troque VERSAO a cada deploy.
-const VERSAO = 'campo-v2-2026-10-07-1';
+const VERSAO = 'campo-v2-1-2026-10-06-1';
 const TILES = 'campo-tiles-v1';
 const MAX_TILES = 400;
 const ARQUIVOS = [
@@ -15,6 +15,8 @@ const ARQUIVOS = [
   'js/catalogo.js',
   'js/config.js',
   'js/db.js',
+  'js/demo.js',
+  'js/icones.js',
   'js/demo/catalogo.js',
   'js/estados.js',
   'js/export.js',
@@ -39,10 +41,12 @@ const ARQUIVOS = [
   'js/views/mapa.js',
   'js/views/novo.js',
   'js/views/painel.js',
+  'js/views/perfil.js',
   'js/views/sim.js',
   'js/views/visita.js',
   'js/voz.js',
   'js/whatsapp.js',
+  'fonts/inter-latin-wght.woff2',
   'vendor/leaflet/leaflet.js',
   'vendor/leaflet/leaflet.css',
   'vendor/leaflet/images/layers-2x.png',

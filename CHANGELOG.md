@@ -12,6 +12,20 @@ Revisão de produto, arquitetura e design para o teste com vendedores na rua. Ne
 - A rolagem da aba volta ao mesmo lugar depois de abrir uma ficha.
 - Sair do mapa durante a animação não gera mais erro no console.
 
+### Fatia 2 · Texto, modo demonstração e Perfil
+- **Modo demonstração** (`?demo=1`, 5 toques seguidos na logo ou Perfil). Só nele aparecem o simulador, o relógio simulado, o selo "exemplo" e os atalhos "simular". O simulador continua inteiro e abre pelo Perfil. Sem o modo, `#/sim` leva ao Perfil.
+- **Perfil** (ícone no topo), com:
+  - **Minha rota:** deslocamento, base, jornada e tempo por visita, que saíram do fim do Hoje.
+  - **Backup:** baixar CSV e JSON, compartilhar e restaurar. Saiu do botão "Exportar" do topo. Um ponto amarelo no ícone avisa quando há visita sem backup, e o aviso do Hoje leva até lá.
+  - **Visão do gestor.**
+  - **Dados de exemplo:** carregar, gerar de novo e remover.
+  - **Modo demonstração.**
+- **Primeira abertura:** sem o modo demonstração, a carteira começa vazia, com boas-vindas e "Ver com dados de exemplo". No modo demonstração, carrega os 210 pontos de exemplo como antes.
+- **Estados vazios** de Hoje, Carteira e Semana. O painel não diz mais que você está "no nível do quartil de cima" com zero pontos.
+- **Texto de avaliador** sai da tela e entra microtexto de vendedor (lista completa na auditoria, frente D). O motivo de cada decisão continua no README.
+- **Ícones** Lucide (ISC) num sprite local e **fonte** Inter (OFL) local, ambos no cache do service worker.
+- Testes novos do modo demonstração (64 no total).
+
 ## V2 · 05/10/2026
 
 Construída em fatias, cada uma com testes passando e verificada no Chromium a 360 px (as telas finais também a 412 px). O plano está em `docs/PLANO_V2.md`.

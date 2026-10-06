@@ -8,6 +8,7 @@ import { TIPOS, DESCARTE, rotulo } from '../catalogo.js';
 import { esc, toast } from '../ui.js';
 import { GRUPO } from './mapa.js';
 import { gerarPlano } from '../plano.js';
+import { modoDemo } from '../demo.js';
 
 const ACAO = { receita: 'lead novo', mapa_aberto: 'verificar no campo', baixa_confianca: 'confirmar' };
 let descartando = null;
@@ -19,13 +20,13 @@ export function renderDescobrir({ main, store, render }) {
 
   main.innerHTML = `
     <h1>Descobrir</h1>
-    <p class="sutil">Estabelecimentos do ICP que ainda não estão na carteira. Dados fictícios no protótipo; em produção, vêm do cruzamento Receita + mapa aberto (ver <code>scripts/</code>).</p>
+    <p class="sutil">Estabelecimentos perto de você que ainda não são da carteira.</p>
     ${Object.keys(GRUPO).map((g) => `
       <div class="secao-titulo"><h2>${esc(GRUPO[g])}</h2><span class="sutil">${grupo(g).length}</span></div>
       ${grupo(g).map((d) => `
         <div class="caixa">
           <b>${esc(d.nome)}</b> ${d.mei != null ? `<span class="selo">${d.mei ? 'MEI · 0,5 pt' : 'não MEI'}</span>` : ''}<span class="selo">${esc(ACAO[g])}</span>
-          <div class="sutil">${esc(rotulo(TIPOS, d.tipo))} · ${esc(d.bairro)}${d.confianca != null ? ` · confiança ${Math.round(d.confianca * 100)}%` : ''} · ${esc(d.fonte)}</div>
+          <div class="sutil">${esc(rotulo(TIPOS, d.tipo))} · ${esc(d.bairro)}${d.confianca != null ? ` · confiança ${Math.round(d.confianca * 100)}%` : ''} · ${esc(modoDemo() ? d.fonte : String(d.fonte || '').replace(/\s*\(fictício\)/, ''))}</div>
           ${descartando === d.id ? `
             <div class="campo">Motivo do descarte</div>
             <div class="linha-btns">${DESCARTE.map(([k, r]) => `<button class="btn peq" data-descartar="${esc(d.id)}" data-motivo="${k}">${esc(r)}</button>`).join('')}</div>` : `

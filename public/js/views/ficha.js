@@ -8,6 +8,7 @@ import { prazoHtml, proximaAcao, seloAvanco } from './componentes.js';
 import { avaliarPrioridade, textoMotivo } from '../prioridade.js';
 import { resumoCompras, FORMAS_PAGAMENTO_ROTULO } from '../historico.js';
 import { MODELOS, modeloPara, enviarWhatsApp, cestaHtml } from '../whatsapp.js';
+import { modoDemo } from '../demo.js';
 
 const CAUSA = { registro_visita: 'registro de visita', cadastro: 'cadastro detectado', pedido: 'pedido detectado', tempo: 'tempo', correcao_manual: 'correção manual', planejamento: 'entrou na lista do dia', migracao: 'migração da V1' };
 const ETAPA_NOME = ['fora do funil', 'Visita planejada', 'Visita efetiva', 'Decisor', 'Cadastro', '1ª compra', '3ª compra autônoma'];
@@ -31,8 +32,8 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
 
   main.innerHTML = `
     <div class="cab-ficha">
-      <h1>${esc(nomeDe(p))}${p.ficticio ? ' <span class="selo">fictício</span>' : ''}</h1>
-      <div class="sutil">${esc([rotulo(TIPOS, p.tipo), p.bairro, rotulo(ORIGENS, p.origem)].filter(Boolean).join(' · '))}</div>
+      <h1>${esc(nomeDe(p))}${p.ficticio && modoDemo() ? ' <span class="selo">exemplo</span>' : ''}</h1>
+      <div class="sutil">${esc([rotulo(TIPOS, p.tipo), p.bairro].filter(Boolean).join(' · '))}</div>
       <div class="linha2">${seloEstado(sit.estado)}${seloPontos(pontosValor(p))}${alto ? '<span class="selo">alto potencial</span>' : ''}${p.mei === true ? '<span class="selo">MEI</span>' : p.mei === false ? '<span class="selo">não MEI</span>' : ''}${prazoHtml(sit)}</div>
       ${seloAvanco(store, p.id)}
       <dl class="dl">
@@ -66,17 +67,17 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
 
     <details class="dobra" id="correcao">
       <summary>Corrigir um registro errado</summary>
-      <p class="sutil">Só para erro de registro. Precisa de confirmação, fica no histórico como "correção manual" e não conta como avanço.</p>
+      <p class="sutil">Use se marcou errado. A correção fica no histórico.</p>
       ${visitas.length ? `<label class="campo" for="corr-visita">Visita</label>
         <select id="corr-visita">${visitas.slice(0, 8).map((v) => `<option value="${esc(v.id)}">${esc(quando(v.checkin.em, agora))} · ${esc(rotulo(RESULTADOS, v.nucleo.resultado) || 'sem resultado')}</option>`).join('')}</select>
         <div class="campo">Resultado correto</div>
         ${chips('corr-resultado', RESULTADOS, null)}
         <button class="btn" data-acao-f="corrigir-visita" style="width:100%;margin-top:8px">Corrigir resultado</button>` : ''}
-      ${!pedidos.length && !p.cadastro_em ? `<div class="campo">Estado declarado (pontos sem histórico, como os migrados da V1)</div>
+      ${!pedidos.length && !p.cadastro_em ? `<div class="campo">Estado (ponto sem compras registradas)</div>
         ${chips('corr-estado', ESTADOS, null)}
         <button class="btn" data-acao-f="corrigir-estado" style="width:100%;margin-top:8px">Corrigir estado</button>` : ''}
     </details>
-    <p style="text-align:right"><a class="sutil" href="#/sim?p=${esc(p.id)}">simular evento neste ponto</a></p>`;
+    ${modoDemo() ? `<a class="btn mais-link demo-link" href="#/sim?p=${esc(p.id)}">Demonstração: simular cadastro ou pedido neste ponto</a>` : ''}`;
 
   // ---------- ações (metade de baixo) ----------
   const aberta = store.visitaAberta();
@@ -135,7 +136,7 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
           <li>Para pedir prazo: chave PIX do CNPJ</li>
         </ul>
         <div class="aviso-fixo" role="note">Prazo depende de análise de crédito; não prometa.</div>
-        ${cestaHtml(p.tipo, esc)}`;
+        ${cestaHtml(p.tipo, esc, { demo: modoDemo() })}`;
     }
     if (sit.estado === 'ativacao' || sit.estado === 'ativacao_vencida') {
       const n = Math.min(3, sit.compras_ciclo);

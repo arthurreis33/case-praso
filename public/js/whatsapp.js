@@ -55,10 +55,10 @@ export function enviarWhatsApp(store, p, modelo) {
   window.open(linkWhatsApp(texto), '_blank', 'noopener');
 }
 
-export function cestaHtml(tipo, esc) {
+export function cestaHtml(tipo, esc, { demo = false } = {}) {
   const c = cesta(tipo);
   return `<div class="caixa"><h3>Cesta de entrada · ${esc(c.titulo)}</h3>
     <p class="sutil">Uma categoria só: ${esc(rotuloCategoria(c.categoria))}. Por quê: ${esc(c.porque)}.</p>
     <ul style="margin:6px 0;padding-left:20px">${c.itens.map((i) => `<li>${esc(i.nome)} · <span class="num">${dinheiro(i.preco)}</span></li>`).join('')}</ul>
-    <p class="sutil">Preços do catálogo fictício. Total de referência: <b class="num">${dinheiro(c.total)}</b>.</p></div>`;
+    <p class="sutil">Total de referência: <b class="num">${dinheiro(c.total)}</b>${demo ? ' (preços de exemplo)' : ''}. Confira o preço do dia no app.</p></div>`;
 }

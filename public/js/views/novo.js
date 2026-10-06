@@ -67,7 +67,7 @@ export function renderNovo({ main, barra, store, ir, params }, { id = null, gps 
     <form id="f-ponto" autocomplete="off">
       <label class="campo" for="f-cnpj">CNPJ</label>
       <div class="linha-btns"><input id="f-cnpj" type="text" name="cnpj" inputmode="numeric" value="${esc(base.cnpj || '')}" placeholder="Só números" style="flex:1"><button type="button" class="btn" data-acao-n="buscar" style="flex:0 0 auto">Buscar</button></div>
-      <p id="cnpj-status" class="dica">Com 14 dígitos, a plataforma busca na Receita (BrasilAPI). Sem rede, preencha à mão.</p>
+      <p id="cnpj-status" class="dica">Com 14 dígitos, buscamos os dados na Receita. Sem sinal, preencha à mão.</p>
       <div id="cnpj-res"></div>
       <label class="campo" for="f-nome">Nome fantasia</label>
       <input id="f-nome" type="text" name="nome" value="${esc(base.nome_fantasia)}" placeholder="Como está na fachada" enterkeyhint="next">
@@ -83,7 +83,7 @@ export function renderNovo({ main, barra, store, ir, params }, { id = null, gps 
         <div class="campo">Horário de funcionamento</div>
         <div class="linha-btns"><label class="sutil" style="flex:1">Abre<input type="time" id="f-abre" value="${esc(hf?.faixas?.[0]?.[0] || '')}"></label><label class="sutil" style="flex:1">Fecha<input type="time" id="f-fecha" value="${esc(hf?.faixas?.[0]?.[1] || '')}"></label></div>
         ${chips('dias_abre', DIAS, hf?.dias || [], { multi: true, classe: 'compacto' })}
-        <p class="dica">Vazio = usa o padrão do tipo. Alimenta a rota e a priorização.</p>
+        <p class="dica">Em branco, a rota usa o horário comum do tipo.</p>
       </details>` : ''}
       <p class="sutil">Não registre nome nem telefone pessoal do dono.</p>
     </form>
@@ -115,7 +115,7 @@ export function renderNovo({ main, barra, store, ir, params }, { id = null, gps 
       if (!f.nome.value && dadosCnpj.razao_social) f.nome.value = dadosCnpj.razao_social;
       if (dadosCnpj.endereco_cadastral && !f.endereco.value) f.endereco.value = dadosCnpj.endereco_cadastral;
       if (dadosCnpj.tipo && !main.querySelector('.chips[data-campo="tipo"] [aria-pressed="true"]')) main.querySelector(`.chips[data-campo="tipo"] [data-v="${dadosCnpj.tipo}"]`)?.click();
-      st.textContent = 'Preenchido pela Receita (BrasilAPI). Confira.';
+      st.textContent = 'Preenchido com os dados da Receita. Confira.';
       main.querySelector('#cnpj-res').innerHTML = `<div class="caixa"><b>${esc(dadosCnpj.razao_social || '')}</b><div class="sutil">${esc([dadosCnpj.cnae, dadosCnpj.situacao, dadosCnpj.mei === true ? 'MEI' : dadosCnpj.mei === false ? 'não MEI' : ''].filter(Boolean).join(' · '))}</div></div>`;
     } catch (e) {
       dadosCnpj = {};

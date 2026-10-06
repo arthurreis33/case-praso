@@ -34,6 +34,12 @@ export function renderCarteira({ main, barra, store, render, params }) {
     history.replaceState(history.state, '', '#/carteira');
   }
   const ps = store.meusPontos();
+  if (!ps.length) {
+    main.innerHTML = `<h1>Carteira</h1>
+      <div class="vazio-box"><p><b>Sua carteira está vazia.</b></p><p class="sutil">Cadastre o ponto onde você está ou busque pelo CNPJ.</p></div>`;
+    barra.innerHTML = '<a class="btn primaria grande" href="#/novo/gps">+ Ponto aqui</a><a class="btn grande" href="#/novo">+ Adicionar</a>';
+    return;
+  }
   const sits = new Map(ps.map((p) => [p.id, store.situacao(p.id)]));
 
   main.innerHTML = `
@@ -78,7 +84,6 @@ export function renderCarteira({ main, barra, store, render, params }) {
     const recentes = ps.filter((p) => store.avancos.has(p.id) && Date.now() - store.avancos.get(p.id).ts < 8000);
 
     cont.innerHTML = `
-      <p class="sutil">Cada ponto está na etapa mais avançada do ciclo atual. Ninguém arrasta card: visita, cadastro, pedido e tempo movem sozinhos.</p>
       ${recentes.length ? `<div class="caixa destaque"><b>Acabaram de mudar</b>${recentes.map((p) => cardPonto(store, p)).join('')}</div>` : ''}
       ${ETAPAS.map(([n, nome], i) => {
         const lista = porEtapa.get(n);
@@ -101,7 +106,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
       }).join('')}
       <details class="dobra" style="margin-top:12px">
         <summary>Fora do funil agora (${fora.length})</summary>
-        <p class="sutil">Leads ainda não planejados e churns sem visita de reconquista. Entram na etapa 1 quando vão para a lista do dia.</p>
+        <p class="sutil">Ainda não entraram numa lista do dia.</p>
         ${ordenar(fora, 'esperados').slice(0, 30).map((p) => cardPonto(store, p)).join('')}
       </details>`;
   }

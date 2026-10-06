@@ -33,7 +33,17 @@ export function planoAtual(store, { forcar = false, ...opts } = {}) {
   return pl;
 }
 
+/** Recalcula o plano do dia mantendo o que o vendedor tirou, pôs e já visitou. */
+export function replanejar(store, opts = {}) {
+  const ant = store.estado.plano_dia || planoAtual(store);
+  const novo = gerarPlano(store, { removidos: ant?.removidos, adicionados: ant?.adicionados, feitos: feitosHoje(store, ant.data), ...opts });
+  store.setPlano(novo);
+  store.marcarPlanejado(novo.paradas.map((x) => x.id));
+  return novo;
+}
+
 export function renderHoje({ main, barra, store, render }) {
+  if (!store.meusPontos().length) return boasVindas({ main, barra });
   const agora = store.agora();
   const pl = planoAtual(store);
   const vend = store.vendedor();
@@ -64,7 +74,7 @@ export function renderHoje({ main, barra, store, render }) {
 
   main.innerHTML = `
     <h1>${pl.amanha ? 'Amanhã' : 'Hoje'} <span class="sutil">· ${esc(dataPl.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }))}</span></h1>
-    <p class="sutil">${pl.amanha ? 'A jornada de hoje já está no fim: este é o plano de amanhã. ' : ''}Saída ${esc(hora(pl.inicio))} · ${esc(MODOS_DESLOCAMENTO.find(([k]) => k === pl.modo)?.[1] || pl.modo)} · ${pl.paradas.length} paradas · ${String(pl.km).replace('.', ',')} km · volta ~${esc(hora(pl.fim_previsto))} · <b>≈${String(pl.esperados_total).replace('.', ',')} pt esperados</b></p>
+    <p class="sutil">${pl.amanha ? 'Seu dia acabou. Este é o plano de amanhã. ' : ''}Saída ${esc(hora(pl.inicio))} · ${esc(MODOS_DESLOCAMENTO.find(([k]) => k === pl.modo)?.[1] || pl.modo)} · ${pl.paradas.length} paradas · ${String(pl.km).replace('.', ',')} km · volta ~${esc(hora(pl.fim_previsto))} · <b>≈${String(pl.esperados_total).replace('.', ',')} pt esperados</b></p>
 
     ${bloco('retornos', 'Retornos com hora', retornos, retornos.slice(0, 5).map((p) => linhaCompacta(store, p, {
       s: `<b>${esc(new Date(p.retorno_sugerido) < agora ? 'atrasado · ' : '')}${esc(quando(p.retorno_sugerido, agora))}</b> · ${esc(janelaTexto(p.decisor) || 'retorno combinado')}`, acao: acaoLista(p),
@@ -97,14 +107,7 @@ export function renderHoje({ main, barra, store, render }) {
       <div id="res-add"></div>
     </details>
 
-    <details class="dobra">
-      <summary>Ajustes da rota</summary>
-      <div class="campo">Deslocamento</div>
-      <div class="chips">${MODOS_DESLOCAMENTO.map(([k, r]) => `<button type="button" class="chip" data-modo-desl="${k}" aria-pressed="${pl.modo === k}">${r}</button>`).join('')}</div>
-      <p class="sutil">Jornada ${esc(vend.jornada.inicio)}–${esc(vend.jornada.fim)} · almoço ${esc(vend.jornada.almoco.join('–'))} · base ${vend.base ? `${vend.base.lat.toFixed(4)}, ${vend.base.lng.toFixed(4)}` : 'não definida'}</p>
-      <button type="button" class="btn" data-acao-h="base-aqui" style="width:100%">Usar minha posição como base</button>
-      <p class="dica">Duração da visita: ${Object.entries(pl.duracoes).map(([t, d]) => `${t} ${d.min} min (${d.fonte})`).join(' · ')}. Roteirizador: ${esc(pl.roteador)}.</p>
-    </details>`;
+    <a class="btn mais-link" href="#/perfil">Ajustar deslocamento e base</a>`;
 
   const url = mapsRotaUrl(pl.paradas.filter((x) => !feitos.has(x.id)).map((x) => store.ponto(x.id)).filter(Boolean));
   barra.innerHTML = `
@@ -122,34 +125,26 @@ export function renderHoje({ main, barra, store, render }) {
   main.querySelector('#busca-add').addEventListener('input', (e) => { buscaAdd = e.target.value; listarAdd(); });
   listarAdd();
 
-  const replanejar = (opts = {}) => {
-    const ant = store.estado.plano_dia;
-    const novo = gerarPlano(store, { removidos: ant?.removidos, adicionados: ant?.adicionados, feitos: feitosHoje(store, ant?.data || pl.data), ...opts });
-    store.setPlano(novo);
-    store.marcarPlanejado(novo.paradas.map((x) => x.id));
-    return novo;
-  };
+  const replan = (opts = {}) => replanejar(store, opts);
 
   const onClick = async (ev) => {
     const t = ev.target.closest('[data-tirar]')?.dataset.tirar;
     if (t) {
       const ant = store.estado.plano_dia;
-      replanejar({ removidos: [...(ant.removidos || []), t], adicionados: (ant.adicionados || []).filter((x) => x !== t) });
+      replan({ removidos: [...(ant.removidos || []), t], adicionados: (ant.adicionados || []).filter((x) => x !== t) });
       toast('Tirado da lista · rota recalculada');
       return render();
     }
     const a = ev.target.closest('[data-add]')?.dataset.add;
     if (a) {
       const ant = store.estado.plano_dia;
-      const novo = replanejar({ adicionados: [...(ant.adicionados || []), a], removidos: (ant.removidos || []).filter((x) => x !== a) });
+      const novo = replan({ adicionados: [...(ant.adicionados || []), a], removidos: (ant.removidos || []).filter((x) => x !== a) });
       const entrou = novo.paradas.some((x) => x.id === a);
       toast(entrou ? 'Adicionado · rota recalculada' : `Não coube: ${novo.nao_couberam.find((x) => x.id === a)?.motivo || 'sem espaço na jornada'}`, 3500);
       return render();
     }
     const z = ev.target.closest('[data-zap]')?.dataset.zap;
     if (z) { const p = store.ponto(z); enviarWhatsApp(store, p, modeloPara(p.estado)); toast('Contato registrado sozinho'); return; }
-    const m = ev.target.closest('[data-modo-desl]')?.dataset.modoDesl;
-    if (m) { store.setConfig({ modo_deslocamento: m }); replanejar(); toast('Rota recalculada'); return render(); }
     const h = ev.target.closest('[data-acao-h]')?.dataset.acaoH;
     if (h === 'replanejar') {
       toast('Buscando sua posição…');
@@ -160,18 +155,9 @@ export function renderHoje({ main, barra, store, render }) {
         if (ult) origem = { lat: ult.checkin.lat, lng: ult.checkin.lng };
       }
       const agoraR = store.agora();
-      const novo = replanejar({ origem: origem || undefined, inicio: agoraR > new Date(pl.inicio) ? agoraR : undefined });
+      const novo = replan({ origem: origem || undefined, inicio: agoraR > new Date(pl.inicio) ? agoraR : undefined });
       toast(`Replanejado a partir de ${origem ? 'onde você está' : 'a base'}, ${hora(agoraR.toISOString())} · ${novo.paradas.length} paradas`, 3500);
       return render();
-    }
-    if (h === 'base-aqui') {
-      try {
-        const pos = await obterPosicao({ maximumAge: 60000, timeout: 8000 });
-        const v = store.vendedor();
-        v.base = { lat: pos.lat, lng: pos.lng };
-        store._mudou('vendedores', v); store.salvar();
-        replanejar(); toast('Base atualizada · rota recalculada'); render();
-      } catch (e) { toast(`GPS: ${e.message}`); }
     }
   };
   main.addEventListener('click', onClick);
@@ -179,3 +165,20 @@ export function renderHoje({ main, barra, store, render }) {
   return () => {};
 }
 
+
+/** Carteira vazia: boas-vindas com o primeiro passo. */
+function boasVindas({ main, barra }) {
+  main.innerHTML = `
+    <div class="boas-vindas">
+      <h1>Bem-vindo ao Campo Praso</h1>
+      <p>Comece pelos pontos do seu bairro. Cada visita registrada monta a lista de amanhã.</p>
+      <div class="pilha">
+        <a class="btn primaria grande" href="#/novo/gps">Cadastrar o ponto onde estou</a>
+        <a class="btn grande" href="#/novo">Adicionar ponto pelo CNPJ</a>
+        <a class="btn grande" href="#/mapa">Ver o mapa</a>
+      </div>
+      <p class="sutil" style="margin-top:24px">Quer treinar antes?</p>
+      <button type="button" class="btn" data-acao="carregar-exemplo" style="width:100%">Ver com dados de exemplo</button>
+    </div>`;
+  barra.innerHTML = '';
+}
