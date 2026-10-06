@@ -2,6 +2,15 @@
 
 Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outubro de 2026.
 
+## A aposta
+
+- A parte que mais mexe na conversão é o laço entre o registro, a janela do decisor e a rota.
+- O vendedor registra quem decide e quando essa pessoa está; a plataforma devolve o retorno na janela certa e a rota do dia.
+- A etapa que esse laço move é a de **visita efetiva para decisor**.
+- O resto da plataforma sustenta esse laço.
+
+[o que o campo mostrou: preencher na quarta]
+
 ## O que o app faz
 
 1. Monta o dia do vendedor: de 8 a 12 pontos em ordem de rota, com a hora prevista e o porquê de cada um ("Vale 3 pt · decisor costuma estar das 14h às 17h · 2/3 compras").
@@ -27,8 +36,10 @@ A V2.1 é para vendedores da Praso testarem na rua. Por isso, nenhuma tela expli
 
 ## Como rodar
 
+**O link para avaliar é `praso-campo-v1.vercel.app/?demo=1`.** Sem o parâmetro, o app abre vazio, como o vendedor o vê.
+
 ```bash
-npm test          # 67 testes, sem dependências (node --test)
+npm test          # 69 testes, sem dependências (node --test)
 npm run dev       # serve public/ em http://localhost:5173
 ```
 
@@ -104,6 +115,17 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 - **Rótulos de estado (V2.1):** a tela mostra Lead · Cadastrado · Ativando · Recorrente · Vencido · Churn. "Oportunidade", do case, aparece como explicação de Cadastrado e de Churn. A chave interna e o export continuam iguais.
 - **Modo demonstração em vez de rótulo "fictício" por toda parte (V2.1):** o vendedor de teste não vê simulador nem marca de demo. Quem avalia abre com `?demo=1`.
 - **Stack mantida:** HTML, CSS e JS puros, sem build. Nada obrigatório exigiu React, e um build acrescentaria risco ao service worker, a parte mais fácil de quebrar offline.
+
+## Como provar que funciona
+
+- **Piloto:** [a definir] vendedores com a plataforma e o restante no Salesforce, durante 45 dias (um ciclo de ativação).
+- **Linha de base:** conversão por etapa e por vendedor no Salesforce, nos 90 dias anteriores (positivo P19).
+- **Métrica primária:** passagem de visita efetiva para decisor e de decisor para cadastro.
+- **Métricas secundárias:** 3ª compra autônoma em 45 dias e tempo de registro.
+- **Critério de sucesso:** ganho mínimo por etapa de [a definir], combinado com o gestor antes de começar.
+- **Sinais de adoção:** visitas registradas no ponto, retornos feitos na janela e notas por voz.
+- **O que sai do Salesforce primeiro:** registro de visita e rota.
+- **O que fica até haver integração:** pedidos e relatórios financeiros.
 
 ## Premissas a validar com o gestor
 
