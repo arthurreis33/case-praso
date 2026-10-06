@@ -4,6 +4,7 @@
 
 - **Correção:** o Mapa quebrava com "L.divIcon is not a function" sempre que a carteira tinha um ponto sem localização. A função que desenha o pino tinha o mesmo nome do ícone importado e o escondia. Ela foi renomeada para `iconePino`, e um teste no navegador (`qa/mapa_sem_pino.mjs`) passou a cobrir o caso.
 - O aviso "N pontos sem localização" leva à Lista com o novo filtro **Sem localização**.
+- **Linhas de chips no computador:** os filtros do Mapa e da Carteira e as pendências do Hoje rolavam para o lado só com o dedo. Com mouse, agora aparece uma barra de rolagem azul e fina. Também dá para rolar com a roda do mouse ou arrastar com o botão pressionado, e arrastar não liga um filtro sem querer. No celular, nada muda. O caso fica coberto por `qa/rolagem_lado.mjs`.
 
 ## V2.1 · 06/10/2026
 

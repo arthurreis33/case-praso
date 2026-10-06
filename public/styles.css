@@ -455,3 +455,14 @@ body.sobreposicao #toast { bottom: calc(var(--barra-h) + 14px + env(safe-area-in
 @media (min-width: 600px) {
   .kpis { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* Linhas de chips que rolam para o lado (filtros do Mapa e da Carteira, pendências do Hoje).
+   No celular, arrasta-se com o dedo e a barra fica escondida. Com mouse, a barra aparece e a roda do mouse
+   também rola para o lado (ver app.js). */
+@media (hover: hover) and (pointer: fine) {
+  .chips.rolagem, .pendencias { scrollbar-width: thin; scrollbar-color: var(--praso) var(--cartao); padding-bottom: 8px; }
+  .chips.rolagem::-webkit-scrollbar, .pendencias::-webkit-scrollbar { display: block; height: 8px; }
+  .chips.rolagem::-webkit-scrollbar-track, .pendencias::-webkit-scrollbar-track { background: var(--cartao); border-radius: 4px; }
+  .chips.rolagem::-webkit-scrollbar-thumb, .pendencias::-webkit-scrollbar-thumb { background: var(--praso); border-radius: 4px; }
+  .chips.rolagem.arrastando, .pendencias.arrastando { cursor: grabbing; user-select: none; }
+}

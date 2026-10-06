@@ -201,6 +201,37 @@ document.addEventListener('change', async (ev) => {
   ev.target.value = '';
 });
 
+// Linhas de chips que rolam para o lado: com mouse, a roda rola para o lado e dá para arrastar com o botão
+// pressionado (no celular, o dedo já resolve). Só age quando a linha tem mais conteúdo do que cabe.
+const ROLA_LADO = '.chips.rolagem, .pendencias';
+document.addEventListener('wheel', (ev) => {
+  const el = ev.target.closest?.(ROLA_LADO);
+  if (!el || el.scrollWidth <= el.clientWidth || Math.abs(ev.deltaX) > Math.abs(ev.deltaY)) return;
+  const antes = el.scrollLeft;
+  el.scrollLeft += ev.deltaY;
+  if (el.scrollLeft !== antes) ev.preventDefault(); // nas pontas, deixa a página rolar
+}, { passive: false });
+let arraste = null;
+document.addEventListener('pointerdown', (ev) => {
+  if (ev.pointerType !== 'mouse' || ev.button !== 0) return;
+  const el = ev.target.closest?.(ROLA_LADO);
+  if (el && el.scrollWidth > el.clientWidth) arraste = { el, x: ev.clientX, ini: el.scrollLeft, moveu: false };
+});
+document.addEventListener('pointermove', (ev) => {
+  if (!arraste) return;
+  const dx = ev.clientX - arraste.x;
+  if (Math.abs(dx) > 5) { arraste.moveu = true; arraste.el.classList.add('arrastando'); }
+  if (arraste.moveu) arraste.el.scrollLeft = arraste.ini - dx;
+});
+document.addEventListener('pointerup', () => {
+  if (!arraste) return;
+  const { el, moveu } = arraste;
+  el.classList.remove('arrastando');
+  // arrastar não é tocar: engole o clique que vem logo depois de soltar
+  if (moveu) el.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); }, { capture: true, once: true });
+  arraste = null;
+});
+
 // Cinco toques seguidos na logo ligam ou desligam o modo demonstração (gesto escondido)
 document.querySelector('.marca').addEventListener('click', () => {
   if (toqueNaMarca()) { toast(modoDemo() ? 'Modo demonstração ligado' : 'Modo demonstração desligado'); render(); }
