@@ -378,3 +378,36 @@ body.sobreposicao #toast { bottom: calc(var(--barra-h) + 14px + env(safe-area-in
 .boas-vindas h1 { font-size: 1.5rem; margin-bottom: 8px; }
 .vazio-box { border: 1px dashed var(--linha); border-radius: var(--raio); padding: 20px 16px; margin: 16px 0; text-align: center; }
 .demo-link { border-style: dashed; color: var(--alerta); border-color: var(--alerta); }
+
+/* ---------- V2.1 · fatia 3: Hoje enxuto, card de 3 linhas, ficha com próxima ação ---------- */
+.selo-estado .ic { width: 15px; height: 15px; background: none; }
+.selo-estado { padding: 2px 9px 2px 6px; }
+.selo-estado.so-icone { padding: 4px; }
+.cor-estado { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--cor); color: #fff; margin-right: 6px; vertical-align: middle; }
+.cor-estado .ic { width: 14px; height: 14px; }
+.card .linha3 { font-size: .9rem; margin-top: 4px; color: var(--sutil); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.situacao { font-size: .88rem; font-weight: 700; }
+.situacao.urgente { color: var(--erro); }
+.cab-dia h1 { display: flex; align-items: baseline; gap: 8px; }
+.data-dia { font-size: .95rem; font-weight: 600; color: var(--sutil); }
+.resumo-dia, .aviso-dia { margin: 2px 0; font-size: .92rem; color: var(--sutil); }
+.aviso-dia { color: var(--texto); font-weight: 600; }
+.pendencias { display: flex; gap: 8px; overflow-x: auto; margin: 10px -16px 4px; padding: 0 16px 2px; scrollbar-width: none; }
+.pendencias::-webkit-scrollbar { display: none; }
+.pend { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--linha); background: var(--fundo); font: inherit; font-size: .9rem; font-weight: 700; color: var(--texto); cursor: pointer; }
+.pend[aria-expanded="true"] { background: var(--texto); color: #fff; border-color: var(--texto); }
+.painel-pend { border: 1.5px solid var(--linha); border-radius: var(--raio); padding: 4px 12px; margin: 6px 0 4px; }
+.titulo-rota { margin-top: 16px; }
+.acao-c .ic { width: 16px; height: 16px; margin-right: 2px; }
+.card .lado .ic { width: 20px; height: 20px; }
+.card .lado > * { flex-direction: column; gap: 2px; font-size: .8rem; }
+.desc-estado { margin: 4px 0 0; font-size: .92rem; color: var(--sutil); }
+.proxima-ficha { margin: 12px 0; padding: 12px 14px; border-radius: var(--raio); background: #EFF4FF; border: 1.5px solid #C0D3FD; }
+.proxima-ficha .rot { font-size: .8rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #123DA1; display: flex; align-items: center; gap: 4px; }
+.proxima-ficha .acao { font-size: 1.15rem; font-weight: 800; margin: 4px 0; }
+.proxima-ficha .porque { margin: 0; font-size: .9rem; color: var(--sutil); }
+.legenda-dobra summary { min-height: 48px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+ul.legenda { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; font-size: .88rem; }
+ul.legenda li { display: flex; align-items: center; gap: 6px; }
+.pino b .ic { width: 15px; height: 15px; stroke-width: 2.4; }
+.sem-pino { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

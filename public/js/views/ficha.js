@@ -1,6 +1,7 @@
 // Ficha do ponto (seção 6.6). Cabeçalho com estado, pontos, prazo, decisor, janela e quem paga;
 // bloco que depende do estado; linha do tempo única; ações embaixo (uma mão).
-import { TIPOS, RESULTADOS, ORIGENS, PROXIMAS_ACOES, MOTIVOS_NAO_AVANCO, ESTADOS, TIPOS_VISITA, rotulo, QUEM_PAGA_PONTO } from '../catalogo.js';
+import { TIPOS, RESULTADOS, PROXIMAS_ACOES, MOTIVOS_NAO_AVANCO, ESTADOS, TIPOS_VISITA, rotulo, QUEM_PAGA_PONTO, ESTADO_DESCRICAO } from '../catalogo.js';
+import { icone } from '../icones.js';
 import { esc, toast, quando, data, dinheiro, pct, seloEstado, seloPontos, janelaTexto, mapsUrl, confirmar, rotuloEstado, chips, alternarChip } from '../ui.js';
 import { pontosValor, altoPotencial, coordDe } from '../rules.js';
 import { nomeDe } from '../store.js';
@@ -10,8 +11,8 @@ import { resumoCompras, FORMAS_PAGAMENTO_ROTULO } from '../historico.js';
 import { MODELOS, modeloPara, enviarWhatsApp, cestaHtml } from '../whatsapp.js';
 import { modoDemo } from '../demo.js';
 
-const CAUSA = { registro_visita: 'registro de visita', cadastro: 'cadastro detectado', pedido: 'pedido detectado', tempo: 'tempo', correcao_manual: 'correção manual', planejamento: 'entrou na lista do dia', migracao: 'migração da V1' };
-const ETAPA_NOME = ['fora do funil', 'Visita planejada', 'Visita efetiva', 'Decisor', 'Cadastro', '1ª compra', '3ª compra autônoma'];
+const CAUSA = { registro_visita: 'registro de visita', cadastro: 'cadastro no app', pedido: 'pedido no app', tempo: 'prazo passou', correcao_manual: 'correção manual', planejamento: 'entrou na rota', migracao: 'veio da V1' };
+const ETAPA_NOME = ['Ainda fora do funil', 'Visita planejada', 'Visitado', 'Decisor encontrado', 'Cadastrado', '1ª compra', '3ª compra pelo app'];
 let verTudo = false;
 
 export function renderFicha({ main, barra, store, ir, render }, id) {
@@ -34,16 +35,20 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
     <div class="cab-ficha">
       <h1>${esc(nomeDe(p))}${p.ficticio && modoDemo() ? ' <span class="selo">exemplo</span>' : ''}</h1>
       <div class="sutil">${esc([rotulo(TIPOS, p.tipo), p.bairro].filter(Boolean).join(' · '))}</div>
-      <div class="linha2">${seloEstado(sit.estado)}${seloPontos(pontosValor(p))}${alto ? '<span class="selo">alto potencial</span>' : ''}${p.mei === true ? '<span class="selo">MEI</span>' : p.mei === false ? '<span class="selo">não MEI</span>' : ''}${prazoHtml(sit)}</div>
+      <div class="linha2">${seloEstado(sit.estado)}${seloPontos(pontosValor(p))}${alto ? '<span class="selo">alto potencial</span>' : ''}${p.mei === true ? '<span class="selo">MEI</span>' : p.mei === false ? '<span class="selo">não MEI</span>' : ''}</div>
+      <p class="desc-estado">${esc(ESTADO_DESCRICAO[sit.estado] || '')}${sit.prazo ? ` · ${prazoHtml(sit)}` : ''}</p>
       ${seloAvanco(store, p.id)}
-      <dl class="dl">
-        <dt>Decisor</dt><dd>${esc(janelaTexto(p.decisor) || 'ainda não sabemos')}</dd>
-        <dt>Quem paga</dt><dd>${esc(rotulo(QUEM_PAGA_PONTO, p.quem_paga) || 'não registrado')}</dd>
-        <dt>Etapa</dt><dd>${esc(ETAPA_NOME[p.etapa_funil || 0])}</dd>
-        <dt>Próxima</dt><dd><b>${esc(pa.texto)}</b></dd>
-        <dt>Hoje</dt><dd>${prior.esperados ? `≈${String(prior.esperados).replace('.', ',')} pt esperados` : 'sem chance hoje'} · <span class="sutil">${esc(textoMotivo(prior))}</span></dd>
-      </dl>
     </div>
+    <section class="proxima-ficha" aria-label="Próxima ação">
+      <div class="rot">${icone('seta')}Próxima ação</div>
+      <p class="acao">${esc(pa.texto)}</p>
+      <p class="porque">${prior.esperados ? `Por que ir hoje: ${esc(textoMotivo(prior).replace(/^Vale [\d,.]+ pts? ?·? ?/, '') || 'vale a visita')} · ≈${String(prior.esperados).replace('.', ',')} pt prováveis` : `Hoje não: ${esc(prior.bloqueio || 'chance baixa')}`}</p>
+    </section>
+    <dl class="dl">
+      <dt>Decisor</dt><dd>${esc(janelaTexto(p.decisor) || 'ainda não sabemos')}</dd>
+      <dt>Quem paga</dt><dd>${esc(rotulo(QUEM_PAGA_PONTO, p.quem_paga) || 'não registrado')}</dd>
+      <dt>No funil</dt><dd>${esc(ETAPA_NOME[p.etapa_funil || 0])}</dd>
+    </dl>
 
     ${blocoEstado()}
 
@@ -141,10 +146,10 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
     if (sit.estado === 'ativacao' || sit.estado === 'ativacao_vencida') {
       const n = Math.min(3, sit.compras_ciclo);
       return `
-        <h2>Ativação · ${n} de 3 compras</h2>
+        <h2>Ativando · ${n} de 3 compras</h2>
         <div class="compras-progresso" aria-label="${n} de 3 compras">${[1, 2, 3].map((i) => `<span class="${i <= n ? 'feita' : ''}"></span>`).join('')}</div>
-        <p>${sit.estado === 'ativacao' ? `<b>${esc(sit.prazo.texto)}</b>. A 3ª precisa ser autônoma (sem ajuda do vendedor).` : '<b>Passou dos 45 dias sem a 3ª compra autônoma.</b>'} ${sit.compras_autonomas_ciclo} autônoma${sit.compras_autonomas_ciclo === 1 ? '' : 's'} no ciclo.</p>
-        ${r ? `<div class="caixa"><b>Último pedido</b> · ${esc(data(r.ultimo_pedido.data))} · ${dinheiro(r.ultimo_pedido.valor)} · ${r.ultimo_pedido.autonomo ? 'autônomo' : 'assistido'}
+        <p>${sit.estado === 'ativacao' ? `<b>${esc(sit.prazo.texto)}</b>. A 3ª precisa ser feita pelo app, sem você.` : '<b>Passou dos 45 dias sem a 3ª compra pelo app.</b>'} ${sit.compras_autonomas_ciclo} pelo app neste ciclo.</p>
+        ${r ? `<div class="caixa"><b>Último pedido</b> · ${esc(data(r.ultimo_pedido.data))} · ${dinheiro(r.ultimo_pedido.valor)} · ${r.ultimo_pedido.autonomo ? 'pelo app' : 'com você'}
           <div class="sutil">${esc((r.ultimo_pedido.itens || []).map((i) => `${i.qtd}× ${i.nome}`).join(' · '))}</div></div>` : ''}
         <button class="btn primaria" data-acao-f="whatsapp" data-modelo="recompra" style="width:100%">Mensagem de recompra (repetir o último pedido)</button>`;
     }
@@ -199,7 +204,7 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
       itens.push({ ts: c2.ts, cls: 'contato', html: `<span class="tit">${esc(c2.canal === 'whatsapp' ? 'WhatsApp' : c2.canal)} · ${esc(rotulo(MODELOS, c2.modelo_mensagem) || 'mensagem')}</span><div class="det sutil">${c2.gerado_pela_plataforma ? 'gerada pela plataforma, gravada sozinha' : ''}</div>` });
     }
     for (const pd of pedidos) {
-      itens.push({ ts: pd.data, cls: 'pedido', html: `<span class="tit">Pedido · ${dinheiro(pd.valor)} · ${pd.autonomo ? 'autônomo' : 'assistido'}</span>
+      itens.push({ ts: pd.data, cls: 'pedido', html: `<span class="tit">Pedido · ${dinheiro(pd.valor)} · ${pd.autonomo ? 'pelo app' : 'com você'}</span>
         <div class="det sutil">${esc((pd.itens || []).slice(0, 4).map((i) => i.nome).join(' · '))}${pd.itens?.length > 4 ? '…' : ''}${pd.pago_em ? ' · pago' : ''}</div>` });
     }
     for (const e of store.eventosDo(p.id)) {

@@ -1,7 +1,7 @@
 // Painéis (seção 6.10).
 //  Vendedor (uma tela, sem rolagem longa): pontos da semana × meta, funil × quartil de cima com a etapa
 //  onde mais perde, retornos na janela do decisor, recompras em risco.
-//  Gestor (rota separada, seletor "visão gestor", sem login): conversão por etapa e por vendedor e
+//  Gestor (V2.1: tela "Equipe", fora das abas, aberta pelo Perfil; em produção, papel do login): conversão por etapa e por vendedor e
 //  comportamento — o painel que tenta explicar por que alguns convertem o dobro. Equipe fictícia.
 import { esc, pct } from '../ui.js';
 import { fmtPontos } from '../rules.js';
@@ -10,15 +10,7 @@ import { linhaCompacta } from './componentes.js';
 import { linkCarteira } from './carteira.js';
 import { modoDemo } from '../demo.js';
 
-const seletor = (atual) => `<div class="modo" role="group" aria-label="Visão">
-  <button type="button" data-visao="painel" aria-pressed="${atual === 'painel'}">Vendedor</button>
-  <button type="button" data-visao="gestor" aria-pressed="${atual === 'gestor'}">Visão gestor</button></div>`;
-
-function ligarSeletor(main, ir) {
-  main.addEventListener('click', (ev) => { const v = ev.target.closest('[data-visao]')?.dataset.visao; if (v) ir(`#/${v}`); });
-}
-
-export function renderPainel({ main, store, ir }) {
+export function renderPainel({ main, store }) {
   const sem = pontosSemana(store);
   const eu = meuFunil(store);
   const top = quartilDeCima(equipeFicticia());
@@ -29,9 +21,13 @@ export function renderPainel({ main, store, ir }) {
   eu.taxas.forEach((t, i) => { if (t == null) return; const gap = t - top.taxas[i]; if (!pior || gap < pior.gap) pior = { i, gap }; });
   const larg = (x) => `${Math.round(Math.max(0, Math.min(1, x ?? 0)) * 100)}%`;
 
+  if (!store.meusPontos().length) {
+    main.innerHTML = `<h1>Sua semana</h1><div class="vazio-box"><p><b>Ainda sem pontos na carteira.</b></p><p class="sutil">Seus números aparecem depois das primeiras visitas.</p></div>`;
+    return;
+  }
   main.innerHTML = `
-    ${seletor('painel')}
-    <h2 style="margin-top:4px">Pontos da semana</h2>
+    <h1>Sua semana</h1>
+    <h2>Pontos da semana</h2>
     <div class="meta-barra" role="img" aria-label="${fmtPontos(sem.total)} de ${sem.meta} pontos"><span style="width:${larg(sem.total / sem.meta)}"></span></div>
     <p style="margin:4px 0"><b class="num">${fmtPontos(sem.total)} de ${sem.meta} pt</b> <span class="sutil">· conta na 3ª compra pelo app</span></p>
     ${sem.itens.map((x) => linhaCompacta(store, x.p, { s: `+${String(x.pontos).replace('.', ',')} pt` })).join('')}
@@ -54,10 +50,9 @@ export function renderPainel({ main, store, ir }) {
     </div>
     ${risco.slice(0, 3).map((x) => linhaCompacta(store, x.p, { s: esc(x.texto), acao: `<a class="acao-c" href="#/ponto/${esc(x.p.id)}">Abrir</a>` })).join('')}
     ${risco.length > 3 ? `<a class="btn mais-link" href="${linkCarteira('prazo')}">Ver as ${risco.length} na Carteira</a>` : ''}`;
-  ligarSeletor(main, ir);
 }
 
-export function renderGestor({ main, store, ir }) {
+export function renderGestor({ main, store }) {
   const equipe = [{ id: 'v-voce', nome: 'Você', funil: meuFunil(store), comportamento: meuComportamento(store) }, ...equipeFicticia()];
   const ord = [...equipe].sort((a, b) => (b.funil.total ?? 0) - (a.funil.total ?? 0));
   const n = Math.max(1, Math.round(ord.length / 4));
@@ -82,7 +77,7 @@ export function renderGestor({ main, store, ir }) {
   ];
 
   main.innerHTML = `
-    ${seletor('gestor')}
+    <h1>Equipe</h1>
     ${modoDemo() ? '<p class="sim-nota">Equipe de exemplo: 5 vendedores fictícios e você.</p>' : ''}
     <h2>Conversão por etapa e por vendedor</h2>
     <p class="sutil">Quantos passam de uma etapa para a seguinte. Do que mais converte para o que menos converte.</p>
@@ -100,5 +95,4 @@ export function renderGestor({ main, store, ir }) {
       <tbody>${ord.map((v) => { const c = v.comportamento; return `<tr><td class="nome-v">${esc(v.nome)}</td><td class="n">${hora(c.hora_media)}</td><td class="n">${num(c.no_ponto_min)}</td><td class="n">${pct(c.retorno_janela)}</td><td class="n">${pct(c.voz)}</td><td class="n">${num(c.nucleo_s)}</td><td class="n">${pct(c.no_ponto_pct)}</td></tr>`; }).join('')}</tbody>
     </table></div>
     <p class="dica">Retorno na janela: voltou até 1 h do horário combinado ou quando o decisor costuma estar.</p>`;
-  ligarSeletor(main, ir);
 }

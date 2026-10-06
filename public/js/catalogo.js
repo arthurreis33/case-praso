@@ -7,18 +7,28 @@ export const TIPOS = [
   ['bar', 'Bar'], ['outro', 'Outro'],
 ];
 
-// V2 · estado do ponto (seção 5). Chave interna → rótulo com o vocabulário da Praso.
+// V2 · estado do ponto (seção 5). Chave interna (vai para o export) → rótulo curto que o vendedor fala (V2.1).
+// "Oportunidade", do case, vira o grupo de Cadastrado + Churn (ver ESTADO_DESCRICAO e a auditoria, frente D).
 export const ESTADOS = [
-  ['lead', 'Lead'], ['cadastrado_sem_compra', 'Oportunidade'], ['ativacao', 'Em ativação'],
-  ['recorrente', 'Recorrente'], ['ativacao_vencida', 'Ativação vencida'], ['churn', 'Oportunidade (churn)'],
+  ['lead', 'Lead'], ['cadastrado_sem_compra', 'Cadastrado'], ['ativacao', 'Ativando'],
+  ['recorrente', 'Recorrente'], ['ativacao_vencida', 'Vencido'], ['churn', 'Churn'],
 ];
+// Uma frase por estado, com a definição do case por trás (ficha e legenda do mapa).
+export const ESTADO_DESCRICAO = {
+  lead: 'Nunca se cadastrou na Praso',
+  cadastrado_sem_compra: 'Oportunidade · cadastrou e ainda não comprou',
+  ativacao: 'Entre a 1ª e a 3ª compra, dentro de 45 dias',
+  recorrente: 'Fez a 3ª compra sozinho pelo app',
+  ativacao_vencida: 'Passou dos 45 dias sem a 3ª compra pelo app',
+  churn: 'Oportunidade · mais de 120 dias sem comprar',
+};
 // V1 · usado só pela migração
 export const ESTADOS_V1 = [['lead', 'Lead'], ['oportunidade', 'Oportunidade'], ['cliente', 'Cliente'], ['churn', 'Churn']];
 
 // Etapas do funil (1 a 6). 0 = ainda fora do funil do ciclo atual.
 export const ETAPAS = [
-  [1, 'Visita planejada'], [2, 'Visita efetiva'], [3, 'Decisor'],
-  [4, 'Cadastro'], [5, '1ª compra'], [6, '3ª compra autônoma'],
+  [1, 'Visita planejada'], [2, 'Visitado'], [3, 'Decisor encontrado'],
+  [4, 'Cadastro'], [5, '1ª compra'], [6, '3ª compra pelo app'],
 ];
 export const ORIGENS = [['base_praso', 'Base Praso'], ['receita', 'Receita'], ['mapa_aberto', 'Mapa aberto'], ['campo', 'Campo']];
 export const TIPOS_VISITA = [['aquisicao', 'Aquisição'], ['acompanhamento', 'Acompanhamento'], ['reconquista', 'Reconquista']];

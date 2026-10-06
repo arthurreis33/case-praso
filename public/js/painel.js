@@ -6,7 +6,7 @@ import { rng } from './seed.js';
 import { CONFIG } from './config.js';
 
 const FAIXA = Object.fromEntries(FAIXAS.map(([k, , a, b]) => [k, [a, b]]));
-export const ETAPAS_CURTAS = ['Planejada', 'Efetiva', 'Decisor', 'Cadastro', '1ª compra', '3ª autônoma'];
+export const ETAPAS_CURTAS = ['Planejada', 'Visitada', 'Decisor', 'Cadastro', '1ª compra', '3ª pelo app'];
 
 /** Início da semana (segunda 00h) do relógio do store. */
 export function inicioSemana(agora) {

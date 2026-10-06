@@ -26,6 +26,23 @@ Revisão de produto, arquitetura e design para o teste com vendedores na rua. Ne
 - **Ícones** Lucide (ISC) num sprite local e **fonte** Inter (OFL) local, ambos no cache do service worker.
 - Testes novos do modo demonstração (64 no total).
 
+### Fatia 3 · Arquitetura de informação
+- **Hoje enxuto.** O título e um resumo de 2 linhas vêm primeiro, e a rota aparece logo abaixo. Os três blocos grandes do topo viraram uma faixa de chips com o que está **fora** da rota: retornos, recompras vencendo e pontos para conhecer. Cada chip abre a lista com as mesmas ações de antes (pôr na rota e WhatsApp). O retorno que já está na rota aparece uma vez só, no card ("Volta amanhã 09:00").
+- **Card com no máximo 3 linhas:**
+  - nome e hora;
+  - estado, pontos e a situação ("2/3 compras · faltam 9 dias para a 3ª compra");
+  - o porquê, sem repetir a linha 2.
+  Os pontos prováveis saíram do card e foram para a ficha. "Tirar" e "Rota" ganharam ícone.
+- **Ficha:** a próxima ação aparece em destaque, com "Por que ir hoje" e os pontos prováveis. O estado vem com uma frase que explica o que ele quer dizer. A etapa aparece pelo nome, sem número.
+- **Gestor como papel separado.** A tela "Equipe" saiu da aba e abre pelo Perfil, com o voltar. A aba "Painel" virou **Semana**, só do vendedor.
+- **Termos do vendedor.** As chaves e o export não mudam.
+  - Estados: Lead · Cadastrado · Ativando · Recorrente · Vencido · Churn. "Oportunidade" aparece na descrição de Cadastrado e de Churn.
+  - Prazo: "faltam N dias para a 3ª compra".
+  - Pedido: "pelo app" ou "com você", no lugar de autônomo e assistido.
+  - Comparação: "os melhores do time", no lugar de quartil de cima.
+  - Tempo: "registro", no lugar de núcleo.
+- **Mapa:** os pinos e os filtros usam ícone no lugar da letra. A legenda fica recolhida e explica cada estado. Uma linha avisa quantos pontos estão sem localização e leva à Carteira.
+
 ## V2 · 05/10/2026
 
 Construída em fatias, cada uma com testes passando e verificada no Chromium a 360 px (as telas finais também a 412 px). O plano está em `docs/PLANO_V2.md`.

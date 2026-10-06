@@ -89,7 +89,7 @@ export function avaliar(ponto, pedidos = [], visitas = [], hoje = new Date(), cf
   let prazo = null;
   if (estado === 'ativacao') {
     const restam = Math.ceil((cicloInicio + LIM_ATIV - agora) / DIA_MS);
-    prazo = { tipo: 'ativacao', dias_restantes: Math.max(0, restam), texto: `faltam ${Math.max(0, restam)} dias para os ${cfg.dias_ativacao}` };
+    prazo = { tipo: 'ativacao', dias_restantes: Math.max(0, restam), texto: `faltam ${Math.max(0, restam)} ${Math.max(0, restam) === 1 ? 'dia' : 'dias'} para a 3ª compra` };
   } else if (ultima != null && ['recorrente', 'ativacao_vencida', 'churn'].includes(estado)) {
     const dias = Math.floor((agora - ultima) / DIA_MS);
     prazo = { tipo: 'sem_comprar', dias, dias_para_churn: Math.max(0, cfg.dias_churn - dias), texto: `${dias} dias sem comprar` };

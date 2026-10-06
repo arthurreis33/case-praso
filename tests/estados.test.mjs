@@ -26,7 +26,7 @@ test('1ª e 2ª compra → ativação, com prazo dos 45 dias', () => {
   assert.equal(r.estado, 'ativacao');
   assert.equal(r.compras_ciclo, 2);
   assert.equal(r.prazo.dias_restantes, 12);
-  assert.equal(r.prazo.texto, 'faltam 12 dias para os 45');
+  assert.equal(r.prazo.texto, 'faltam 12 dias para a 3ª compra');
   assert.equal(r.etapa, 5);
 });
 

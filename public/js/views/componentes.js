@@ -1,6 +1,7 @@
 // Peças de interface compartilhadas pelas telas: card do ponto, próxima ação, prazo.
-import { TIPOS, PROXIMAS_ACOES, rotulo } from '../catalogo.js';
-import { esc, seloEstado, seloPontos, janelaTexto, quando, mapsUrl } from '../ui.js';
+import { PROXIMAS_ACOES, rotulo } from '../catalogo.js';
+import { esc, seloEstado, seloPontos, quando, mapsUrl } from '../ui.js';
+import { icone } from '../icones.js';
 import { pontosValor } from '../rules.js';
 import { nomeDe } from '../store.js';
 
@@ -40,41 +41,70 @@ export function seloAvanco(store, pid) {
 }
 
 /**
- * Card do ponto.
- * opts: { eta, ordem, motivo, esperados, lado: html extra, sub: texto extra, semRota }
+ * Situação do ponto numa frase de vendedor (linha 2 do card): o que decide a ação hoje.
+ * Devolve { texto, urgente }.
+ */
+export function situacao(store, p, sit = store.situacao(p.id)) {
+  const agora = store.agora();
+  if (p.status_dia === 'retornar' && p.retorno_sugerido) {
+    const atrasado = new Date(p.retorno_sugerido) < agora;
+    return { texto: atrasado ? `Volta atrasada: era ${quando(p.retorno_sugerido, agora)}` : `Volta ${quando(p.retorno_sugerido, agora)}`, urgente: atrasado };
+  }
+  if (sit.estado === 'ativacao') {
+    return { texto: `${Math.min(sit.compras_ciclo, 3)}/3 compras · ${sit.prazo.texto}`, urgente: sit.prazo.dias_restantes <= 7 };
+  }
+  if (sit.estado === 'ativacao_vencida') return { texto: `Passou dos 45 dias${sit.prazo?.dias != null ? ` · ${sit.prazo.dias} dias sem comprar` : ''}`, urgente: false };
+  if (sit.estado === 'churn') return { texto: sit.prazo?.texto || 'Parou de comprar', urgente: false };
+  if (sit.estado === 'recorrente') return { texto: sit.prazo ? `Última compra há ${sit.prazo.dias} dias` : 'Comprando pelo app', urgente: (sit.prazo?.dias_para_churn ?? 999) <= 30 };
+  if (sit.estado === 'cadastrado_sem_compra') return { texto: p.cadastro_em ? `Cadastrou há ${Math.max(0, Math.floor((agora - new Date(p.cadastro_em)) / 86400000))} dias, sem compra` : 'Cadastrado, sem compra', urgente: false };
+  return { texto: p.verificar || !p.cnpj ? 'Sem CNPJ: confirmar no ponto' : '', urgente: false };
+}
+
+/** Tira do motivo o que o card já mostra (os pontos do ponto): "Vale 3 pt · decisor…" → "decisor…". */
+const semValor = (m) => String(m || '').replace(/^Vale [\d,.]+ pts? ?·? ?/, '');
+const maiuscula = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
+
+/**
+ * Card do ponto: no máximo 3 linhas de informação.
+ *  1 · ordem, nome e hora prevista
+ *  2 · estado, pontos e a situação ("2/3 compras · faltam 3 dias para a 3ª compra")
+ *  3 · o porquê (no Hoje) ou a próxima ação (no resto)
+ * Ações ficam ao lado (Tirar, Rota…). O card inteiro abre a ficha.
+ * opts: { eta, ordem, motivo, sub, lado, semRota }
  */
 export function cardPonto(store, p, opts = {}) {
   const sit = store.situacao(p.id);
+  const st = situacao(store, p, sit);
   const pa = proximaAcao(store, p, sit);
-  const dec = janelaTexto(p.decisor);
-  const compras = sit.estado === 'ativacao' ? `<span class="selo" title="compras no ciclo">${Math.min(sit.compras_ciclo, 3)}/3</span>` : '';
   const vencido = p.status_dia === 'retornar' && p.retorno_sugerido && new Date(p.retorno_sugerido) < store.agora();
-  const sub = [rotulo(TIPOS, p.tipo), p.bairro, opts.sub].filter(Boolean).join(' · ');
+  // o porquê sem repetir o que a linha 2 já diz (pontos, compras, prazo, volta combinada)
+  const motivo = semValor(opts.motivo).split(' · ').filter((seg) => seg
+    && !(st.texto && st.texto.toLowerCase().includes(seg.toLowerCase()))
+    && !/^\d\/3 compras$/.test(seg)
+    && !(/^retorno combinado/.test(seg) && /^Volta/.test(st.texto))).join(' · ');
+  const linha3 = [opts.sub, motivo ? maiuscula(motivo) : `Próxima: ${pa.texto}`].filter(Boolean).join(' · ');
   return `<div class="card e-${esc(sit.estado)} ${vencido ? 'vencido' : ''}" data-ponto="${esc(p.id)}">
     <a class="corpo" href="#/ponto/${esc(p.id)}">
       <div class="linha1">
-        <div class="nome">${opts.ordem != null ? `<span class="ordem">${opts.ordem}</span> ` : ''}${esc(nomeDe(p))}</div>
+        <div class="nome">${opts.ordem != null ? `<span class="ordem">${opts.ordem}</span>` : ''}${esc(nomeDe(p))}</div>
         ${opts.eta ? `<span class="eta">${esc(opts.eta)}</span>` : ''}
       </div>
-      <div class="meta">${esc(sub)}</div>
-      <div class="linha2">${seloEstado(sit.estado)}${seloPontos(pontosValor(p))}${opts.esperados != null ? seloPontos(opts.esperados, { esperados: true }) : ''}${compras}${prazoHtml(sit)}</div>
-      ${dec ? `<div class="meta">Decisor: <b>${esc(dec)}</b></div>` : ''}
-      <div class="meta">Próxima: <b>${esc(pa.texto)}</b></div>
-      ${opts.motivo ? `<div class="motivo">${esc(opts.motivo)}</div>` : ''}
+      <div class="linha2">${seloEstado(sit.estado)}${seloPontos(pontosValor(p))}${st.texto ? `<span class="situacao ${st.urgente ? 'urgente' : ''}">${esc(st.texto)}</span>` : ''}</div>
+      <div class="linha3">${esc(linha3)}</div>
       ${seloAvanco(store, p.id)}
     </a>
     <div class="lado">
       ${opts.lado || ''}
-      ${opts.semRota ? '' : `<a href="${esc(mapsUrl(p))}" target="_blank" rel="noopener" aria-label="Rota no Google Maps para ${esc(nomeDe(p))}">Rota</a>`}
+      ${opts.semRota ? '' : `<a href="${esc(mapsUrl(p))}" target="_blank" rel="noopener" aria-label="Rota no Google Maps para ${esc(nomeDe(p))}">${icone('navegar')}<span>Rota</span></a>`}
     </div>
   </div>`;
 }
 
-/** Linha compacta para os blocos fixos do Hoje: nome, um dado-chave e uma ação. */
+/** Linha compacta (pendências do Hoje, Semana): ícone do estado, nome, um dado-chave e uma ação. */
 export function linhaCompacta(store, p, { s = '', acao = '' } = {}) {
   const sit = store.situacao(p.id);
   return `<div class="linha-c" data-ponto="${esc(p.id)}">
-    <span class="selo-estado e-${esc(sit.estado)}" style="padding:2px" title="${esc(sit.estado)}"><i aria-hidden="true">${esc({ lead: 'L', cadastrado_sem_compra: 'O', ativacao: 'A', recorrente: 'R', ativacao_vencida: 'V', churn: 'C' }[sit.estado])}</i></span>
+    ${seloEstado(sit.estado, { soIcone: true })}
     <a class="corpo-c" href="#/ponto/${esc(p.id)}"><span class="t">${esc(nomeDe(p))}</span><span class="s">${s}</span></a>
     ${acao}
   </div>`;

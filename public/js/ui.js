@@ -1,5 +1,6 @@
 // Utilitários de interface: escape, chips, formatação de hora, toast, selos.
 import { ESTADOS, FAIXAS, DIAS, QUEM_DECIDE, rotulo } from './catalogo.js';
+import { icone } from './icones.js';
 
 export const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -105,16 +106,21 @@ const LETRA = { lead: 'L', cadastrado_sem_compra: 'O', ativacao: 'A', recorrente
 export const letraEstado = (e) => LETRA[e] || '?';
 export const rotuloEstado = (e) => rotulo(ESTADOS, e);
 
-/** Selo de estado: cor + letra + rótulo (nada depende só de cor). */
-export function seloEstado(e) {
-  return `<span class="selo-estado e-${esc(e)}"><i aria-hidden="true">${letraEstado(e)}</i>${esc(rotuloEstado(e))}</span>`;
+const ICONE_ESTADO = { lead: 'lead', cadastrado_sem_compra: 'cadastrado', ativacao: 'ativacao', recorrente: 'recorrente', ativacao_vencida: 'vencido', churn: 'churn' };
+export const iconeEstado = (e) => icone(ICONE_ESTADO[e] || 'info');
+
+/** Selo de estado: cor + ícone + rótulo (nada depende só de cor). `soIcone` para listas compactas. */
+export function seloEstado(e, { soIcone = false } = {}) {
+  return soIcone
+    ? `<span class="selo-estado so-icone e-${esc(e)}" title="${esc(rotuloEstado(e))}">${iconeEstado(e)}<span class="oculto">${esc(rotuloEstado(e))}</span></span>`
+    : `<span class="selo-estado e-${esc(e)}">${iconeEstado(e)}${esc(rotuloEstado(e))}</span>`;
 }
 
 export function seloPontos(n, { esperados = false } = {}) {
   const t = String(Math.round(n * 100) / 100).replace('.', ',');
   return esperados
-    ? `<span class="pontos esperados" title="pontos esperados hoje">≈${t} pt</span>`
-    : `<span class="pontos" title="pontos de aquisição">${t} pt</span>`;
+    ? `<span class="pontos esperados" title="pontos prováveis hoje">≈${t} pt</span>`
+    : `<span class="pontos" title="pontos que o ponto vale">${t} pt</span>`;
 }
 
 /** "Dono · 14h–17h · seg a sex" */

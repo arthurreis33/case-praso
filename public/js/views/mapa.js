@@ -8,13 +8,16 @@
 // Leaflet fica em public/vendor (BSD-2) e é guardado pelo service worker: o app abre offline;
 // sem rede, só os tiles de fundo não carregam (os já vistos ficam em cache).
 import { ESTADOS, TIPOS, rotulo } from '../catalogo.js';
-import { esc, toast, seloEstado, seloPontos, letraEstado, confirmar, mapsUrl, janelaTexto } from '../ui.js';
+import { esc, toast, seloEstado, seloPontos, iconeEstado, confirmar, mapsUrl, janelaTexto } from '../ui.js';
+import { ESTADO_DESCRICAO } from '../catalogo.js';
+import { icone } from '../icones.js';
+import { linkCarteira } from './carteira.js';
 import { coordDe, pontosValor } from '../rules.js';
 import { nomeDe } from '../store.js';
 import { prazoHtml } from './componentes.js';
 
 const ui = { estados: new Set(), tipo: '', pontos: '', desconhecidos: false, centro: null, zoom: null };
-const COR = { lead: '#4d4d4d', cadastrado_sem_compra: '#0047b3', ativacao: '#9a4d00', recorrente: '#0a6b2d', ativacao_vencida: '#6b2fa3', churn: '#a30000' };
+const COR = { lead: '#4B5563', cadastrado_sem_compra: '#2053CE', ativacao: '#B45309', recorrente: '#15803D', ativacao_vencida: '#7E22CE', churn: '#B91C1C' };
 
 let carregando = null;
 export function carregarLeaflet() {
@@ -36,8 +39,8 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
   if (params.lat && params.lng) { ui.centro = [+params.lat, +params.lng]; ui.zoom = 17; ui.desconhecidos = true; }
   main.innerHTML = `
     <div class="chips rolagem" aria-label="Filtrar por estado">
-      <button type="button" class="chip" id="f-desc" aria-pressed="${ui.desconhecidos}">? Desconhecidos</button>
-      ${ESTADOS.map(([k, r]) => `<button type="button" class="chip" data-f-estado="${k}" aria-pressed="${ui.estados.has(k)}"><span class="selo-estado e-${k}" style="padding:1px;margin-right:4px"><i>${letraEstado(k)}</i></span>${esc(r)}</button>`).join('')}
+      <button type="button" class="chip" id="f-desc" aria-pressed="${ui.desconhecidos}">? Fora da carteira</button>
+      ${ESTADOS.map(([k, r]) => `<button type="button" class="chip" data-f-estado="${k}" aria-pressed="${ui.estados.has(k)}"><span class="cor-estado e-${k}">${iconeEstado(k)}</span>${esc(r)}</button>`).join('')}
     </div>
     <div class="linha-btns" style="margin:4px 0 6px">
       <select id="f-tipo" aria-label="Filtrar por tipo" style="flex:1;min-height:48px;min-width:0"><option value="">Tipo: todos</option>${TIPOS.map(([k, r]) => `<option value="${k}"${ui.tipo === k ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
@@ -45,7 +48,10 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     </div>
     <div class="mapa-wrap"><div id="mapa" role="application" aria-label="Mapa dos pontos"></div></div>
     <div id="mapa-aviso"></div>
-    <div class="legenda" aria-label="Legenda">${ESTADOS.map(([k, r]) => `<span><span class="selo-estado e-${k}" style="padding:1px"><i>${letraEstado(k)}</i></span>${esc(r)}</span>`).join('')}<span><span class="pino desconhecido" style="width:18px;height:18px;display:inline-grid"><b style="font-size:10px">?</b></span>Desconhecido</span></div>
+    ${(() => { const n = store.meusPontos().filter((p) => !coordDe(p)).length; return n ? `<p class="sutil sem-pino">${icone('alerta')}${n} ${n === 1 ? 'ponto sem localização' : 'pontos sem localização'}: o check-in marca o lugar. <a href="${linkCarteira('verificar')}">Ver na Carteira</a></p>` : ''; })()}
+    <details class="legenda-dobra"><summary>O que é cada cor</summary>
+      <ul class="legenda">${ESTADOS.map(([k, r]) => `<li><span class="cor-estado e-${k}">${iconeEstado(k)}</span><b>${esc(r)}</b> · ${esc(ESTADO_DESCRICAO[k])}</li>`).join('')}
+      <li><span class="pino desconhecido" style="width:22px;height:22px;display:inline-grid"><b style="font-size:11px">?</b></span><b>Fora da carteira</b> · ainda não é ponto seu</li></ul></details>
     <p class="dica">Segure no mapa para criar um ponto. Segure um pino para mudar de lugar.</p>`;
 
   barra.innerHTML = `<button class="btn primaria grande" data-acao-m="estou-aqui">Estou aqui: novo ponto</button><a class="btn grande" href="#/descobrir">Descobrir</a>`;
@@ -100,7 +106,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
   }
 
   function icone(L, estado, extra = '') {
-    return L.divIcon({ className: '', html: `<div class="pino ${extra}" style="--cor:${COR[estado]}"><b>${letraEstado(estado)}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 34], popupAnchor: [0, -30] });
+    return L.divIcon({ className: '', html: `<div class="pino ${extra}" style="--cor:${COR[estado]}"><b>${iconeEstado(estado)}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 34], popupAnchor: [0, -30] });
   }
 
   function popupPonto(p) {
