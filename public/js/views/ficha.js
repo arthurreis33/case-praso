@@ -191,7 +191,7 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
         v.tempos?.no_ponto_s != null && `${Math.round(v.tempos.no_ponto_s / 60)} min no ponto`,
       ].filter(Boolean).join(' · ');
       const nota = v.nota_texto || v.surpresa;
-      itens.push({ ts: v.checkin.em, cls: 'visita', html: `<a href="#/visita/${esc(v.id)}" class="tit">Visita · ${esc(rotulo(RESULTADOS, v.nucleo.resultado) || 'sem resultado')}${v.checkout ? '' : ' (aberta)'}</a>
+      itens.push({ ts: v.checkin.em, cls: 'visita', href: `#/visita/${v.id}`, html: `<span class="tit">Visita · ${esc(rotulo(RESULTADOS, v.nucleo.resultado) || 'sem resultado')}${v.checkout ? '' : ' (aberta)'}</span>
         <div class="det">${esc(det)}</div>${nota ? `<div class="det">“${esc(nota.slice(0, 220))}”${v.nota_origem === 'voz' ? ' <span class="sutil">(voz)</span>' : ''}</div>` : ''}${v.transcricao_status === 'pendente' ? '<div class="sutil">transcrição na fila</div>' : ''}` });
     }
     for (const c2 of store.contatosDo(p.id)) {
@@ -210,7 +210,9 @@ export function renderFicha({ main, barra, store, ir, render }, id) {
     }
     itens.sort((a, b) => b.ts.localeCompare(a.ts));
     const mostrar = verTudo ? itens : itens.slice(0, 15);
-    return `<ul class="linha-tempo">${mostrar.map((i) => `<li class="${i.cls}"><div class="quando-lt">${esc(quando(i.ts, agora))}</div>${i.html}</li>`).join('') || '<li>Nada ainda.</li>'}</ul>
+    return `<ul class="linha-tempo">${mostrar.map((i) => (i.href
+      ? `<li class="${i.cls}"><a class="lt-link" href="${esc(i.href)}"><div class="quando-lt">${esc(quando(i.ts, agora))}</div>${i.html}</a></li>`
+      : `<li class="${i.cls}"><div class="quando-lt">${esc(quando(i.ts, agora))}</div>${i.html}</li>`)).join('') || '<li>Nada ainda.</li>'}</ul>
       ${itens.length > mostrar.length ? `<button class="btn" data-acao-f="ver-tudo" style="width:100%">Ver tudo (${itens.length})</button>` : ''}`;
   }
 }

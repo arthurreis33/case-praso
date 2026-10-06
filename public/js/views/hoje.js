@@ -6,6 +6,7 @@
 import { MODOS_DESLOCAMENTO } from '../catalogo.js';
 import { esc, toast, hora, quando, seloEstado, mapsRotaUrl, janelaTexto } from '../ui.js';
 import { cardPonto, linhaCompacta } from './componentes.js';
+import { linkCarteira } from './carteira.js';
 import { gerarPlano, chaveDia, diaDoPlano } from '../plano.js';
 import { avaliarPrioridade } from '../prioridade.js';
 import { obterPosicao } from '../geo.js';
@@ -67,10 +68,10 @@ export function renderHoje({ main, barra, store, render }) {
 
     ${bloco('retornos', 'Retornos com hora', retornos, retornos.slice(0, 5).map((p) => linhaCompacta(store, p, {
       s: `<b>${esc(new Date(p.retorno_sugerido) < agora ? 'atrasado · ' : '')}${esc(quando(p.retorno_sugerido, agora))}</b> · ${esc(janelaTexto(p.decisor) || 'retorno combinado')}`, acao: acaoLista(p),
-    })).join('') + (retornos.length > 5 ? `<p class="sutil">+${retornos.length - 5} na Carteira.</p>` : ''))}
+    })).join('') + (retornos.length > 5 ? `<a class="btn mais-link" href="${linkCarteira('retornar')}">Ver os ${retornos.length} retornos na Carteira</a>` : ''))}
     ${bloco('recompra', 'Recompra vencendo', recompra, recompra.slice(0, 3).map(({ p, a }) => linhaCompacta(store, p, {
       s: esc(a.motivos.slice(1).join(' · ')), acao: `<button type="button" class="acao-c" data-zap="${esc(p.id)}" aria-label="Mensagem de recompra para ${esc(nomeDe(p))} pelo WhatsApp">WhatsApp</button>`,
-    })).join('') + (recompra.length > 3 ? `<p class="sutil"><a href="#/carteira">+${recompra.length - 3}: ver na Carteira (filtro "prazo vencendo")</a></p>` : ''))}
+    })).join('') + (recompra.length > 3 ? `<a class="btn mais-link" href="${linkCarteira('prazo')}">Ver as ${recompra.length} na Carteira</a>` : ''))}
     ${bloco('novos', 'Pontos novos para verificar', novos.length || desconhecidos ? [...novos, ...Array(desconhecidos)] : [],
       `${novos.slice(0, 2).map((p) => linhaCompacta(store, p, { s: 'sem CNPJ: verificar no campo', acao: acaoLista(p) })).join('')}
        ${desconhecidos ? `<a class="btn" href="#/descobrir" style="width:100%;margin:8px 0">Descobrir: ${desconhecidos} fora da carteira</a>` : ''}`)}
@@ -88,7 +89,7 @@ export function renderHoje({ main, barra, store, render }) {
 
     ${feitos.size ? `<details class="dobra"><summary>Visitados hoje (${feitos.size})</summary>${[...feitos].map((id) => store.ponto(id)).filter(Boolean).map((p) => cardPonto(store, p)).join('')}</details>` : ''}
     ${pl.nao_couberam.length ? `<details class="dobra"><summary>Não couberam (${pl.nao_couberam.length})</summary>
-      ${pl.nao_couberam.map((x) => { const p = store.ponto(x.id); return p ? `<div class="caixa"><b>${esc(nomeDe(p))}</b> ${seloEstado(p.estado)}<div class="sutil">${esc(x.motivo)}</div></div>` : ''; }).join('')}</details>` : ''}
+      ${pl.nao_couberam.map((x) => { const p = store.ponto(x.id); return p ? cardPonto(store, p, { motivo: `Não coube: ${x.motivo}` }) : ''; }).join('')}</details>` : ''}
 
     <details class="dobra" id="add">
       <summary>Adicionar ponto à lista</summary>

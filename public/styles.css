@@ -353,3 +353,14 @@ body.sobreposicao #toast { bottom: calc(var(--barra-h) + 14px + env(safe-area-in
 .comp .lb .b.top { background: var(--serie-2); }
 .comp > div[role=rowheader] { font-weight: 700; }
 .nome-v { white-space: nowrap; font-weight: 700; }
+
+/* ---------- V2.1 · fatia 1: voltar, links que levam a algum lugar ---------- */
+.btn-voltar { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; margin-left: -10px; border: 0; background: none; color: inherit; cursor: pointer; }
+.btn-voltar[hidden] { display: none; }
+.btn.mais-link { width: 100%; margin: 8px 0; min-height: 48px; }
+.kpi-link { display: block; color: inherit; text-decoration: none; border-color: var(--primaria); }
+.kpi-link .r { color: var(--primaria); font-weight: 700; }
+.titulo-link { color: inherit; text-decoration: none; display: inline-block; min-height: 48px; padding-top: 10px; }
+.titulo-link::after { content: " ›"; color: var(--primaria); }
+.linha-tempo .lt-link { display: block; min-height: 48px; color: inherit; text-decoration: none; }
+.linha-tempo .lt-link .tit { color: var(--primaria); text-decoration: underline; }

@@ -36,6 +36,14 @@ const elRelogio = document.getElementById('relogio-sim');
 const elStatus = document.getElementById('status-fila');
 const elFilaN = document.getElementById('status-fila-n');
 let limpar = null;
+const btnVoltar = document.getElementById('btn-voltar');
+// Profundidade da navegação dentro do app, gravada no próprio histórico: decide entre history.back() e ir para o Hoje
+let profundidade = history.state?.d ?? 0;
+let substituindo = false;
+if (history.state?.d == null) history.replaceState({ d: 0 }, '');
+let ultimoHash = null;
+let ultimoSobre = false;
+const rolagens = new Map(); // posição da rolagem por tela de aba, para voltar ao mesmo lugar
 
 const ROTAS = [
   [/^#\/visita\/([\w-]+)$/, (c, m) => renderVisita(c, m[1]), true],
@@ -54,7 +62,7 @@ const ROTAS = [
 
 function ir(hash, substituir = false) {
   if (location.hash === hash) return render();
-  if (substituir) location.replace(hash); else location.hash = hash;
+  if (substituir) { substituindo = true; location.replace(hash); } else location.hash = hash;
 }
 
 export function parametros() {
@@ -63,6 +71,7 @@ export function parametros() {
 }
 
 function render() {
+  if (ultimoHash != null && !ultimoSobre) rolagens.set(ultimoHash, window.scrollY);
   if (typeof limpar === 'function') { try { limpar(); } catch {} }
   limpar = null;
   barra.innerHTML = '';
@@ -73,11 +82,14 @@ function render() {
   antigo.replaceWith(novo);
   const ctx = { main: novo, barra, store, ir, params: parametros(), render };
   let achou = false;
+  let ehSobre = false;
   for (const [re, fn, sobre, aba] of ROTAS) {
     const m = h.match(re);
     if (!m) continue;
     achou = true;
+    ehSobre = !!sobre;
     document.body.classList.toggle('sobreposicao', !!sobre);
+    btnVoltar.hidden = !sobre;
     abas.querySelectorAll('a').forEach((a) => (a.dataset.aba === aba ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
     try { limpar = fn(ctx, m); } catch (e) { console.error(e); novo.innerHTML = `<p class="aviso erro">Erro ao abrir a tela: ${esc(e.message)}</p>`; }
     break;
@@ -86,8 +98,16 @@ function render() {
   renderAvisos();
   renderTopo();
   ajustarBarra();
-  window.scrollTo(0, 0);
+  // voltando de uma tela por cima para a aba de onde saiu: a rolagem volta ao mesmo lugar
+  const y = !ehSobre && ultimoSobre ? rolagens.get(h) : null;
+  window.scrollTo(0, y || 0);
+  ultimoHash = h;
+  ultimoSobre = ehSobre;
 }
+
+btnVoltar.addEventListener('click', () => {
+  if (profundidade > 0) history.back(); else ir('#/hoje', true);
+});
 
 function ajustarBarra() {
   requestAnimationFrame(() => {
@@ -183,7 +203,12 @@ document.getElementById('inp-importar').addEventListener('change', async (ev) =>
 });
 
 store.aoMudar(renderTopo);
-window.addEventListener('hashchange', render);
+window.addEventListener('hashchange', () => {
+  if (substituindo) { substituindo = false; history.replaceState({ d: profundidade }, ''); } // trocou a entrada atual
+  else if (history.state?.d != null) profundidade = history.state.d; // voltou ou avançou para uma entrada conhecida
+  else { profundidade += 1; history.replaceState({ d: profundidade }, ''); }
+  render();
+});
 // ao voltar para a aba (ex.: depois do Maps ou do WhatsApp), relê a tela para atualizar horários
 document.addEventListener('visibilitychange', () => {
   const h = location.hash;

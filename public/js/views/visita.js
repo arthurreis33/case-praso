@@ -68,7 +68,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
   main.innerHTML = `
     <div class="cabecalho-visita">
       <div class="sutil"><span class="selo">${esc(R(C.TIPOS_VISITA, v.tipo))}</span>${v.planejada_para ? ` previsto ${esc(hora(v.planejada_para))}` : ''}</div>
-      <h1>${esc(nomeDe(p))}</h1>
+      <h1>${v.ponto_id && store.ponto(v.ponto_id) ? `<a class="titulo-link" href="#/ponto/${esc(p.id)}">${esc(nomeDe(p))}</a>` : esc(nomeDe(p))}</h1>
       <div id="relogio" class="sutil"></div>
       <div id="gps" class="gps"></div>
       <div id="pino"></div>

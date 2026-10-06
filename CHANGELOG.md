@@ -1,5 +1,17 @@
 # Changelog
 
+## V2.1 · 06/10/2026
+
+Revisão de produto, arquitetura e design para o teste com vendedores na rua. Nenhuma função foi apagada: o que saiu da tela mudou de lugar. A auditoria está em `docs/AUDITORIA_V2.md`, e os prints de antes e depois em `docs/prints/v2.1/`.
+
+### Fatia 1 · Interação
+- Botão voltar no topo de toda tela por cima (ficha, visita, novo ponto, Descobrir, simulador). Quem entra direto num link volta para o Hoje, sem sair do app.
+- "Não couberam" vira card e abre a ficha. Os nomes dos pontos conquistados na semana abrem a ficha, e o nome do ponto na visita também.
+- Os links "ver na Carteira" abrem a Lista já filtrada (`#/carteira?filtro=prazo|retornar|verificar|sem_visita|estado:…`). A Lista ganhou os filtros "Retorno marcado" e "Sem CNPJ".
+- O quadro "recompras em risco" vira link. A linha de visita na linha do tempo ganha um alvo de 48 px.
+- A rolagem da aba volta ao mesmo lugar depois de abrir uma ficha.
+- Sair do mapa durante a animação não gera mais erro no console.
+
 ## V2 · 05/10/2026
 
 Construída em fatias, cada uma com testes passando e verificada no Chromium a 360 px (as telas finais também a 412 px). O plano está em `docs/PLANO_V2.md`.

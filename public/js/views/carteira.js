@@ -13,11 +13,26 @@ import { DIA_MS } from '../estados.js';
 // estado da tela (sobrevive à troca de aba nesta sessão)
 const ui = {
   modo: 'funil', aberta: null, busca: '', estados: new Set(), tipos: new Set(), pontos: null,
-  semVisita: false, prazo: false, ordem: 'esperados', limite: 40,
+  semVisita: false, prazo: false, retornar: false, verificar: false, ordem: 'esperados', limite: 40,
 };
+const LIMPO = () => ({ busca: '', estados: new Set(), tipos: new Set(), pontos: null, semVisita: false, prazo: false, retornar: false, verificar: false });
+
+/** Link de outra tela para a Lista já filtrada: #/carteira?filtro=prazo|retornar|verificar|sem_visita|estado:churn */
+export const linkCarteira = (filtro) => `#/carteira?filtro=${encodeURIComponent(filtro)}`;
 const N_SEM_VISITA = 14;
 
-export function renderCarteira({ main, barra, store, render }) {
+export function renderCarteira({ main, barra, store, render, params }) {
+  // Chegou por um link filtrado: abre a Lista só com esse filtro e limpa o endereço (o filtro vale uma vez)
+  if (params.filtro) {
+    Object.assign(ui, LIMPO(), { modo: 'lista', limite: 40 });
+    const [f, v] = params.filtro.split(':');
+    if (f === 'estado' && v) ui.estados.add(v);
+    else if (f === 'prazo') ui.prazo = true;
+    else if (f === 'retornar') ui.retornar = true;
+    else if (f === 'verificar') ui.verificar = true;
+    else if (f === 'sem_visita') ui.semVisita = true;
+    history.replaceState(history.state, '', '#/carteira');
+  }
   const ps = store.meusPontos();
   const sits = new Map(ps.map((p) => [p.id, store.situacao(p.id)]));
 
@@ -44,7 +59,7 @@ export function renderCarteira({ main, barra, store, render }) {
     const o = ev.target.closest('[data-ordem]')?.dataset.ordem;
     if (o) { ui.ordem = o; return desenharLista(); }
     if (ev.target.closest('[data-mais]')) { ui.limite += 40; return ui.modo === 'funil' ? desenharFunil() : desenharLista(); }
-    if (ev.target.closest('[data-limpar]')) { Object.assign(ui, { busca: '', estados: new Set(), tipos: new Set(), pontos: null, semVisita: false, prazo: false }); return desenharLista(); }
+    if (ev.target.closest('[data-limpar]')) { Object.assign(ui, LIMPO()); return desenharLista(); }
   });
 
   // ---------------- Funil ----------------
@@ -98,6 +113,8 @@ export function renderCarteira({ main, barra, store, render }) {
     if (f === 'pontos') ui.pontos = ui.pontos === v ? null : v;
     if (f === 'sem_visita') ui.semVisita = !ui.semVisita;
     if (f === 'prazo') ui.prazo = !ui.prazo;
+    if (f === 'retornar') ui.retornar = !ui.retornar;
+    if (f === 'verificar') ui.verificar = !ui.verificar;
     ui.limite = 40;
   }
 
@@ -116,6 +133,8 @@ export function renderCarteira({ main, barra, store, render }) {
         if (u && (agora - new Date(u.checkin.em)) / DIA_MS <= N_SEM_VISITA) return false;
       }
       if (ui.prazo && !prazoVencendo(s)) return false;
+      if (ui.retornar && !(p.status_dia === 'retornar' && p.retorno_sugerido)) return false;
+      if (ui.verificar && !(p.verificar || !p.cnpj)) return false;
       return true;
     });
   }
@@ -140,7 +159,7 @@ export function renderCarteira({ main, barra, store, render }) {
       <div class="chips rolagem" aria-label="Filtrar por tipo">${TIPOS.map(([v, r]) => chip('tipo', v, r, ui.tipos.has(v))).join('')}</div>
       <div class="chips rolagem" aria-label="Outros filtros">
         ${chip('pontos', '3', '3 pt', ui.pontos === '3')}${chip('pontos', '1', '1 pt', ui.pontos === '1')}${chip('pontos', '0.5', '0,5 pt', ui.pontos === '0.5')}
-        ${chip('sem_visita', '1', `Sem visita há +${N_SEM_VISITA} d`, ui.semVisita)}${chip('prazo', '1', 'Prazo vencendo', ui.prazo)}
+        ${chip('sem_visita', '1', `Sem visita há +${N_SEM_VISITA} d`, ui.semVisita)}${chip('prazo', '1', 'Prazo vencendo', ui.prazo)}${chip('retornar', '1', 'Retorno marcado', ui.retornar)}${chip('verificar', '1', 'Sem CNPJ', ui.verificar)}
       </div>
       <div class="secao-titulo"><span class="sutil" id="n-res">${res.length} pontos</span>
         <label class="sutil">Ordenar <select id="ordem" style="min-height:48px;width:auto;padding:4px 8px">

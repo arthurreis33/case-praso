@@ -71,7 +71,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
     camada = L.layerGroup().addTo(mapa);
     camadaDesc = L.layerGroup();
     desenhar(L);
-    if (!ui.centro && !foco && marcadores.size) mapa.fitBounds(L.featureGroup([...marcadores.values()]).getBounds(), { padding: [20, 20] });
+    if (!ui.centro && !foco && marcadores.size) mapa.fitBounds(L.featureGroup([...marcadores.values()]).getBounds(), { padding: [20, 20], animate: false });
     mapa.on('moveend', () => { ui.centro = mapa.getCenter(); ui.zoom = mapa.getZoom(); });
     // Click2Create: segurar no mapa (no toque, o Leaflet entrega como contextmenu)
     mapa.on('contextmenu', async (e) => {
@@ -179,7 +179,7 @@ export function renderMapa({ main, barra, store, ir, params, render }) {
   main.querySelector('#f-pontos').addEventListener('change', (e) => { ui.pontos = e.target.value; desenhar(); });
   barra.onclick = (ev) => { if (ev.target.closest('[data-acao-m="estou-aqui"]')) ir('#/novo/gps'); };
 
-  return () => { morto = true; mapa?.remove(); };
+  return () => { morto = true; if (mapa) { mapa.off(); mapa.stop(); mapa.remove(); } };
 }
 
 export const GRUPO = { receita: 'Na Receita, fora da carteira', mapa_aberto: 'No mapa aberto, sem CNPJ', baixa_confianca: 'Casado com baixa confiança' };

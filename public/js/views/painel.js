@@ -7,6 +7,7 @@ import { esc, pct } from '../ui.js';
 import { fmtPontos } from '../rules.js';
 import { pontosSemana, meuFunil, meuComportamento, recomprasEmRisco, equipeFicticia, quartilDeCima, ETAPAS_CURTAS } from '../painel.js';
 import { linhaCompacta } from './componentes.js';
+import { linkCarteira } from './carteira.js';
 
 const seletor = (atual) => `<div class="modo" role="group" aria-label="Visão">
   <button type="button" data-visao="painel" aria-pressed="${atual === 'painel'}">Vendedor</button>
@@ -31,7 +32,8 @@ export function renderPainel({ main, store, ir }) {
     ${seletor('painel')}
     <h2 style="margin-top:4px">Pontos da semana</h2>
     <div class="meta-barra" role="img" aria-label="${fmtPontos(sem.total)} de ${sem.meta} pontos"><span style="width:${larg(sem.total / sem.meta)}"></span></div>
-    <p style="margin:4px 0"><b class="num">${fmtPontos(sem.total)} de ${sem.meta} pt</b> <span class="sutil">· conta quando o ponto vira recorrente (3ª compra autônoma)${sem.itens.length ? `: ${esc(sem.itens.map((x) => x.p.nome_fantasia).join(', '))}` : ''}</span></p>
+    <p style="margin:4px 0"><b class="num">${fmtPontos(sem.total)} de ${sem.meta} pt</b> <span class="sutil">· conta quando o ponto vira recorrente (3ª compra autônoma)</span></p>
+    ${sem.itens.map((x) => linhaCompacta(store, x.p, { s: `+${String(x.pontos).replace('.', ',')} pt` })).join('')}
 
     <h2>Seu funil × quartil de cima</h2>
     <div class="leg-comp"><span><i class="i1"></i>Você</span><span><i class="i2"></i>Quartil de cima (${esc(top.nomes.join(', '))})</span></div>
@@ -47,10 +49,10 @@ export function renderPainel({ main, store, ir }) {
 
     <div class="kpis">
       <div class="kpi"><div class="v">${pct(comp.retorno_janela)}</div><div class="r">retornos na janela do decisor${comp.n_revisitas ? ` (${comp.n_revisitas} revisitas)` : ''}</div></div>
-      <div class="kpi"><div class="v">${risco.length}</div><div class="r">recompras em risco</div></div>
+      <a class="kpi kpi-link" href="${linkCarteira('prazo')}"><div class="v">${risco.length}</div><div class="r">recompras em risco ›</div></a>
     </div>
     ${risco.slice(0, 3).map((x) => linhaCompacta(store, x.p, { s: esc(x.texto), acao: `<a class="acao-c" href="#/ponto/${esc(x.p.id)}">Abrir</a>` })).join('')}
-    ${risco.length > 3 ? '<p class="sutil"><a href="#/carteira">Ver todas na Carteira (filtro "prazo vencendo")</a></p>' : ''}`;
+    ${risco.length > 3 ? `<a class="btn mais-link" href="${linkCarteira('prazo')}">Ver as ${risco.length} na Carteira</a>` : ''}`;
   ligarSeletor(main, ir);
 }
 
