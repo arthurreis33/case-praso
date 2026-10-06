@@ -17,9 +17,13 @@ const ui = {
 };
 const LIMPO = () => ({ busca: '', estados: new Set(), tipos: new Set(), pontos: null, semVisita: false, prazo: false, retornar: false, verificar: false, semPino: false });
 
-/** Link de outra tela para a Lista já filtrada: #/carteira?filtro=prazo|retornar|verificar|sem_visita|estado:churn */
+/** Link de outra tela para a Lista já filtrada: #/carteira?filtro=prazo|retornar|verificar|sem_visita|oportunidade|estado:churn */
 export const linkCarteira = (filtro) => `#/carteira?filtro=${encodeURIComponent(filtro)}`;
 const N_SEM_VISITA = 14;
+// V2.2: "Oportunidade" é o termo do case para quem cadastrou e não comprou e para quem deu churn.
+// O chip liga os dois estados juntos; as chaves e os rótulos dos estados não mudam.
+const OPORTUNIDADE = ['cadastrado_sem_compra', 'churn'];
+const oportunidadeLigada = () => OPORTUNIDADE.every((e) => ui.estados.has(e));
 
 export function renderCarteira({ main, barra, store, render, params }) {
   // Chegou por um link filtrado: abre a Lista só com esse filtro e limpa o endereço (o filtro vale uma vez)
@@ -27,6 +31,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
     Object.assign(ui, LIMPO(), { modo: 'lista', limite: 40 });
     const [f, v] = params.filtro.split(':');
     if (f === 'estado' && v) ui.estados.add(v);
+    else if (f === 'oportunidade') OPORTUNIDADE.forEach((e) => ui.estados.add(e));
     else if (f === 'prazo') ui.prazo = true;
     else if (f === 'retornar') ui.retornar = true;
     else if (f === 'verificar') ui.verificar = true;
@@ -115,6 +120,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
   // ---------------- Lista ----------------
   function alternarFiltro(f, v) {
     if (f === 'estado') ui.estados.has(v) ? ui.estados.delete(v) : ui.estados.add(v);
+    if (f === 'oportunidade') { const on = oportunidadeLigada(); OPORTUNIDADE.forEach((e) => (on ? ui.estados.delete(e) : ui.estados.add(e))); }
     if (f === 'tipo') ui.tipos.has(v) ? ui.tipos.delete(v) : ui.tipos.add(v);
     if (f === 'pontos') ui.pontos = ui.pontos === v ? null : v;
     if (f === 'sem_visita') ui.semVisita = !ui.semVisita;
@@ -163,7 +169,7 @@ export function renderCarteira({ main, barra, store, render, params }) {
     const chip = (f, v, r, on) => `<button type="button" class="chip" data-filtro="${f}" data-v="${esc(v)}" aria-pressed="${on}">${esc(r)}</button>`;
     cont.innerHTML = `
       <input type="search" id="busca" placeholder="Buscar por nome ou CNPJ" value="${esc(ui.busca)}" aria-label="Buscar por nome ou CNPJ" enterkeyhint="search">
-      <div class="chips rolagem" aria-label="Filtrar por estado">${ESTADOS.map(([v, r]) => chip('estado', v, r, ui.estados.has(v))).join('')}</div>
+      <div class="chips rolagem" aria-label="Filtrar por estado">${chip('oportunidade', '1', 'Oportunidades', oportunidadeLigada())}${ESTADOS.map(([v, r]) => chip('estado', v, r, ui.estados.has(v))).join('')}</div>
       <div class="chips rolagem" aria-label="Filtrar por tipo">${TIPOS.map(([v, r]) => chip('tipo', v, r, ui.tipos.has(v))).join('')}</div>
       <div class="chips rolagem" aria-label="Outros filtros">
         ${chip('pontos', '3', '3 pt', ui.pontos === '3')}${chip('pontos', '1', '1 pt', ui.pontos === '1')}${chip('pontos', '0.5', '0,5 pt', ui.pontos === '0.5')}

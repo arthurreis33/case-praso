@@ -3,6 +3,7 @@
 ## V2.2 · Fase A · 06/10/2026
 
 - **Seed coerente com a H1:** o tempo de registro do "Você" no exemplo saía de `r.int(14, 70)`, com média perto de 42 s, contra a meta de menos de 20 s da própria H1. Agora 70% das visitas ficam entre 10 e 22 s e 30% entre 23 e 45 s (mediana perto de 18 s). Continua determinístico, e `tests/seed.test.mjs` cobre a faixa e a repetição.
+- **"Oportunidades" na Carteira:** a Lista ganhou o chip **Oportunidades**, primeiro da linha de estados. Ele liga Cadastrado e Churn juntos e desliga os dois quando ambos já estão ligados. O link `#/carteira?filtro=oportunidade` abre a Lista com esse filtro. Os rótulos e as chaves dos estados não mudaram.
 
 ## V2.1.1 · 06/10/2026
 
