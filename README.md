@@ -86,7 +86,7 @@ Uma pergunta ficou em aberto e pesa no argumento de venda, que é se existe limi
 
 ## Fora do escopo
 
-Ficaram de fora o login e os múltiplos usuários, já que o vendedor é fixo e a visão do gestor abre pelo Perfil, além do backend com sincronização entre aparelhos, da integração real com pedidos e crédito, do Google Places, do solver de rota externo e do modelo preditivo. O cruzamento da base da Receita com o Overture Maps, que alimentaria a fila de pontos desconhecidos, ficou como proposta em [docs/PIPELINE_RECEITA_OVERTURE.md](docs/PIPELINE_RECEITA_OVERTURE.md), e no protótipo essa fila usa pontos fictícios. O app ainda não foi testado em Android real nem no Safari do iPhone, e a transcrição real com chave de API também não.
+Ficaram de fora o login e os múltiplos usuários, já que o vendedor é fixo e a visão do gestor abre pelo Perfil, além do backend com sincronização entre aparelhos, da integração real com pedidos e crédito, do Google Places, do solver de rota externo e do modelo preditivo. O cruzamento da base da Receita com o Overture Maps, que alimentaria a fila de pontos desconhecidos, ficou como proposta em [docs/PIPELINE_RECEITA_OVERTURE.md](docs/PIPELINE_RECEITA_OVERTURE.md), e no protótipo essa fila usa pontos fictícios.
 
 ## Estrutura do repositório
 
