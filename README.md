@@ -42,18 +42,6 @@ Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outub
 
 **Link para avaliar:** `https://case-praso.vercel.app/?demo=1`, que abre com os dados de exemplo.
 
-## O que mudou na V2.1
-
-A V2.1 é para vendedores da Praso testarem na rua. Por isso, nenhuma tela explica a si mesma: as decisões ficam neste README e em `docs/AUDITORIA_V2.md`, que tem a auditoria completa e a lista priorizada. Nenhuma função foi apagada; o que saiu da tela mudou de lugar.
-
-- **Hoje:** a rota aparece logo abaixo do título. O que está fora da rota (retornos, recompras vencendo, pontos para conhecer) fica em chips, e cada card tem no máximo 3 linhas.
-- **Perfil** (ícone do topo): Minha rota, Backup (o antigo "Exportar"), Visão do gestor, Dados de exemplo e Modo demonstração.
-- **Modo demonstração:** `?demo=1`, 5 toques seguidos na logo ou Perfil. Só nele aparecem o simulador, o relógio e as marcas de dado de exemplo. Sem ele, a primeira abertura começa com a carteira vazia e boas-vindas.
-- **Navegação:** toda tela por cima tem voltar no topo, todo ponto mostrado abre a ficha, e os links para a Carteira chegam já filtrados.
-- **Identidade da Praso:** logo, azul `#2053CE`, Inter local e ícones Lucide.
-- **Termos do vendedor:** Cadastrado, Ativando, Vencido, Churn, "pelo app", "pt prováveis". As chaves e o export não mudam.
-- **Cadastro real:** o checklist da ficha segue o fluxo do app da Praso, com destaque para marcar "Vendedor da Praso" em "Como você conheceu?".
-
 ## Como rodar
 
 **O link para avaliar é `https://case-praso.vercel.app/?demo=1`.** Sem o parâmetro, o app abre vazio, como o vendedor o vê.
