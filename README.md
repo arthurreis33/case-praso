@@ -62,10 +62,6 @@ Em produção, cadastro, pedido e pagamento viriam da integração com o sistema
 
 **9. Um simulador ocupa o lugar da integração com pedidos.** Cadastro, pedido e pagamento são disparados à mão no modo demonstração. O ganho é mostrar o card mudando sozinho sem acesso aos sistemas da Praso. O custo é que essa integração é a dependência número um da plataforma em produção, e sem ela a 3ª compra autônoma não é mensurável.
 
-## Como provar que funciona
-
-A proposta é um piloto de 45 dias, que é um ciclo de ativação, com parte dos vendedores na plataforma e o restante no Salesforce, usando como linha de base a conversão por etapa e por vendedor dos 90 dias anteriores. A métrica primária é a passagem de visita efetiva para decisor e de decisor para cadastro, e as secundárias são a 3ª compra autônoma em 45 dias e o tempo de registro. O critério de sucesso e o tamanho do grupo devem ser combinados com o gestor antes de começar, e os sinais de adoção são as visitas registradas no ponto, os retornos feitos na janela e o uso da nota por voz. O registro de visita e a rota são o que sai do Salesforce primeiro, enquanto pedidos e relatórios financeiros ficam lá até haver integração.
-
 ## O que é simulado e o que falta validar
 
 Os 210 pontos de exemplo são fictícios, assim como a equipe de cinco vendedores e o catálogo. As regras estão implementadas de verdade, mas os valores, como pesos, faixas de pico e prazos de retorno, estão marcados como `PALPITE` no código, porque as visitas de campo foram poucas para calibrar qualquer número com segurança.
