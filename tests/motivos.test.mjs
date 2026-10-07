@@ -24,11 +24,11 @@ test('toda chave de MOTIVOS_NAO_AVANCO tem regra em CONFIG.motivos', () => {
 
 const casos = [
   ['tem_fornecedor', 'retorno', D(13, 14)], // 7 dias, na janela (14h)
-  ['preco', 'retorno', D(9, 11)], // 3 dias, abertura + 1h
-  ['quer_prazo', 'retorno', D(9, 11)],
+  ['preco', 'retorno', D(9, 14)], // V2.3: 3 dias, na janela (14h)
+  ['quer_prazo', 'retorno', D(9, 14)],
   ['desconfia_app', 'retorno', D(9, 14)], // 3 dias, na janela
   ['sem_tempo', 'retorno', D(6, 14)], // próxima janela: hoje às 14h
-  ['vai_pensar', 'retorno', D(8, 11)], // 2 dias
+  ['vai_pensar', 'retorno', D(8, 14)], // V2.3: 2 dias, na janela
 ];
 for (const [motivo, tipo, quando] of casos) {
   test(`motivo ${motivo}: a próxima ação vem de CONFIG.motivos`, () => {
@@ -40,6 +40,24 @@ for (const [motivo, tipo, quando] of casos) {
     }
   });
 }
+
+// V2.3 · A: "Preço", "Quer prazo" e "Vai pensar" voltam na janela do decisor; sem janela, na abertura do dia
+const com = (faixas) => ({ tipo: 'restaurante', decisor: faixas ? { papel: 'dono', janela: { dias: [], faixas } } : null });
+test('V2.3 · decisor das 9h às 11h30 e "Preço": retorno 3 dias depois, às 9h', () => {
+  const s = sugerirProximaAcao(visita('falou_com_decisor', 'preco'), com(['9-1130']), { agora: AGORA });
+  assert.equal(new Date(s.data_hora).getTime(), D(9, 9).getTime(), s.data_hora);
+  assert.match(s.porque, /na janela dele/);
+});
+test('V2.3 · decisor das 14h às 17h e "Vai pensar": retorno 2 dias depois, às 14h', () => {
+  const s = sugerirProximaAcao(visita('falou_com_decisor', 'vai_pensar'), com(['14-17']), { agora: AGORA });
+  assert.equal(new Date(s.data_hora).getTime(), D(8, 14).getTime(), s.data_hora);
+});
+test('V2.3 · sem janela conhecida, os três caem na abertura do dia', () => {
+  for (const [m, dias] of [['preco', 3], ['quer_prazo', 3], ['vai_pensar', 2]]) {
+    const s = sugerirProximaAcao(visita('falou_com_decisor', m), com(null), { agora: AGORA });
+    assert.equal(new Date(s.data_hora).getTime(), D(6 + dias, 11).getTime(), `${m}: ${s.data_hora}`);
+  }
+});
 
 test('motivo nao_icp: sem próxima ação', () => {
   const s = sug('recusou', 'nao_icp');

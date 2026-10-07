@@ -53,7 +53,7 @@ export function cicloReposicao(store, p) {
 
 /**
  * Avalia um ponto para hoje. `chegada` (Date) é opcional: sem ela, a janela do decisor conta se existir hoje.
- * Devolve { valor, chance, esperados, motivos[], bloqueio, retornoHoje, recompraVencendo }.
+ * Devolve { valor, chance, esperados, motivos[], bloqueio, retornoHoje, recompraVencendo, visitaAposMensagem }.
  */
 export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = store.situacao(p.id), cfg = CONFIG } = {}) {
   const agora = store.agora();
@@ -65,6 +65,7 @@ export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = 
   let bloqueio = null;
   let retornoHoje = null;
   let recompraVencendo = false;
+  let visitaAposMensagem = false;
 
   // ---- funcionamento ----
   if (!abreNoDia(p, hoje.getDay())) bloqueio = 'fechado hoje';
@@ -108,6 +109,17 @@ export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = 
       motivos.push(`reposição vencendo (compra a cada ~${Math.round(ciclo)} dias)`);
     } else {
       motivos.push(`${sit.compras_ciclo}/3 compras`);
+    }
+    // V2.3: a recompra se cuida por mensagem; a visita só vale quando a mensagem não gerou pedido
+    const regra = c.ativacao_visita;
+    const ct = recompraVencendo && regra ? store.contatosDo(p.id).find((x) => (x.canal || 'whatsapp') === 'whatsapp') : null;
+    if (ct) {
+      const dias = Math.floor((agora - new Date(ct.ts)) / DIA_MS);
+      const pediuDepois = store.pedidosDo(p.id).some((x) => x.data > ct.ts);
+      if (dias >= regra.dias_sem_pedido_apos_contato && !pediuDepois) {
+        visitaAposMensagem = true;
+        motivos.push(`mensagem sem pedido há ${dias} dias: vale a visita`);
+      }
     }
   }
   if (sit.estado === 'churn') {
@@ -157,7 +169,7 @@ export function avaliarPrioridade(store, p, { chegada = null, dia = null, sit = 
 
   if (bloqueio) chance = 0;
   chance = Math.min(1, chance);
-  return { valor, chance, esperados: Math.round(valor * chance * 100) / 100, motivos, bloqueio, retornoHoje, recompraVencendo, sit };
+  return { valor, chance, esperados: Math.round(valor * chance * 100) / 100, motivos, bloqueio, retornoHoje, recompraVencendo, visitaAposMensagem, sit };
 }
 
 /** Texto curto do motivo para o card: "Vale 3 pts · decisor das 15h às 17h · retorno combinado". */

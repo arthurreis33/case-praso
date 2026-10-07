@@ -2,8 +2,9 @@
 //  Check-in (GPS, precisão, hora; pergunta "corrigir o pino?" a mais de 150 m)
 //  → núcleo em 3 toques, sempre em chips (RF06 da V1): resultado · quem decide · janela do decisor
 //  → motivo de não avanço (só quando não é avanço) → próxima ação sugerida, confirmada com um toque
-//  → nota do vendedor ao sair (voz ou texto) → pesquisa opcional recolhida (RF07) e surpresa (RF08)
-//  → check-out com os tempos do RF11.
+//  → um só botão antes do check-out ("Salvar e fazer check-out", ou "Check-out" sem resultado), com os tempos do RF11
+//  → nota do vendedor ao sair (voz ou texto; a origem é inferida). Pesquisa opcional (RF07) e surpresa (RF08)
+//  só aparecem com CONFIG.visita.pesquisa_de_campo (V2.3).
 // Tudo é gravado no toque; nenhum botão espera rede.
 import * as C from '../catalogo.js';
 import { esc, chips, alternarChip, quando, hora, duracao, toast, dinheiro, confirmar } from '../ui.js';
@@ -92,14 +93,14 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
 
     <section class="proxima" id="proxima" aria-label="Próxima ação"></section>
 
-    <section class="surpresa">
+    <section class="surpresa" id="nota">
       <h2>Nota do vendedor, ao sair do ponto</h2>
       <p class="dica">Sua nota, depois de sair. Não grave o cliente.</p>
       <div id="voz"></div>
       ${texto('nota_texto', v.nota_texto, 'Ou digite / dite pelo microfone do teclado')}
     </section>
 
-    <details class="bloco" id="bloco-pesquisa"${v.pesquisa.inicio ? ' open' : ''}>
+    ${CONFIG.visita?.pesquisa_de_campo ? `<details class="bloco" id="bloco-pesquisa"${v.pesquisa.inicio ? ' open' : ''}>
       <summary>Pesquisa (opcional)</summary>
       ${htmlPesquisa(v)}
     </details>
@@ -107,8 +108,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
     <section class="surpresa">
       <h2>O que me surpreendeu aqui</h2>
       ${texto('surpresa', v.surpresa)}
-      ${rotuloCampo('A nota foi por')}${chips('nota_origem', C.MODOS_REGISTRO, v.nota_origem)}
-    </section>`;
+    </section>` : ''}`;
 
   const elRel = main.querySelector('#relogio');
   const elGps = main.querySelector('#gps');
@@ -201,7 +201,7 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
       elRes.classList.add('ok');
       elRes.textContent = `Registro salvo em ${duracao(d.tempo_nucleo_s)}${d.nucleo_no_ponto === false ? ' (depois de sair)' : ''} · ${destino}`;
     } else if (n.inicio) {
-      elRes.textContent = `Registrando desde ${hora(n.inicio)}. ${n.resultado ? 'Toque em Salvar registro.' : 'Falta o resultado.'}`;
+      elRes.textContent = `Registrando desde ${hora(n.inicio)}. ${n.resultado ? (v.checkout ? 'Toque em Salvar registro.' : 'Toque em Salvar e fazer check-out.') : 'Falta o resultado.'}`;
     } else {
       elRes.textContent = 'Falta o resultado.';
     }
@@ -211,7 +211,8 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
     const n = v.nucleo;
     const btSalvar = `<button class="btn primaria grande" data-acao="salvar-nucleo"${n.resultado ? '' : ' disabled'}>Salvar registro</button>`;
     if (!v.checkout) {
-      barra.innerHTML = n.fim ? '<button class="btn primaria grande" data-acao="checkout">Check-out</button>' : `${btSalvar}<button class="btn grande" data-acao="checkout">Check-out</button>`;
+      // V2.3: uma só ação principal antes do check-out; com resultado, salva o núcleo e faz o check-out
+      barra.innerHTML = `<button class="btn primaria grande" data-acao="checkout">${n.resultado ? 'Salvar e fazer check-out' : 'Check-out'}</button>`;
     } else {
       barra.innerHTML = n.fim ? '<button class="btn primaria grande" data-acao="concluir">Concluir</button>' : `${btSalvar}<button class="btn grande" data-acao="concluir">Concluir</button>`;
     }
@@ -266,7 +267,6 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
     const t = ev.target.closest('[data-campo]');
     if (t && t.tagName === 'TEXTAREA') {
       store.setCampo(v.id, t.dataset.campo, t.value);
-      if (t.dataset.campo === 'nota_texto' && t.value && !v.nota_origem) store.setCampo(v.id, 'nota_origem', 'digitacao');
     }
   });
 
@@ -283,9 +283,11 @@ export function renderVisita({ main, barra, store, ir, render }, id) {
       if (v.nucleo.resultado && !v.nucleo.fim) store.salvarNucleo(v.id);
       autoConfirmar();
       store.checkout(v.id);
-      toast(v.nucleo.fim ? 'Check-out feito. Grave a nota ao sair.' : 'Check-out feito.');
+      const pt = store.ponto(v.ponto_id);
+      const volta = pt?.status_dia === 'retornar' && pt.retorno_sugerido ? ` · volta ${quando(pt.retorno_sugerido, store.agora())}` : '';
+      toast(v.nucleo.fim ? `Check-out feito${volta}. Grave a nota ao sair.` : 'Check-out feito.', 4000);
       tudo();
-      main.querySelector('.surpresa')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      main.querySelector('#nota')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (acao === 'concluir') {
       ir(`#/ponto/${p.id}`);
     }

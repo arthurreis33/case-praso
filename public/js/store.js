@@ -54,7 +54,11 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
     // ---------- Relógio (o simulador pode avançar N dias) ----------
     agoraReal: agora,
     agora() { return new Date(agora().getTime() + (this.estado.config?.relogio_offset_ms || 0)); },
-    get offsetDias() { return Math.round((this.estado.config?.relogio_offset_ms || 0) / DIA_MS); },
+    // V2.3: dias de calendário entre o relógio simulado e o real (o +1 dia do simulador leva ao começo da jornada)
+    get offsetDias() {
+      const dia = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      return Math.round((dia(this.agora()) - dia(agora())) / DIA_MS);
+    },
 
     // ---------- Carga ----------
     async carregar() {
@@ -504,6 +508,8 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
         v.pesquisa.fim = t;
       }
       setPath(v, caminho, valor);
+      // V2.3: a origem da nota é inferida (o app grava o áudio e vê o texto digitado); voz e depois texto = misto
+      if (caminho === 'nota_texto' && String(valor ?? '').trim()) v.nota_origem = v.nota_origem === 'voz' || v.nota_origem === 'misto' ? 'misto' : 'digitacao';
       if (v.campos_ia?.includes(caminho)) v.campos_ia = v.campos_ia.filter((c) => c !== caminho);
       this._mudou('visitas', v);
       if (v.nucleo.fim || v.checkout) { this._aplicarLaco(v); this.reavaliar(v.ponto_id, { causa: 'registro_visita', autor: 'vendedor' }); }
@@ -658,7 +664,8 @@ export function criarStore({ adaptador = adaptadorMemoria(), storage = memoriaSt
       if (!v) return null;
       v.audio = { id: v.id, mime, dur_s, gravado_em: iso(this.agora()) };
       v.transcricao_status = 'pendente';
-      v.nota_origem = v.nota_texto?.trim() ? 'misto' : 'voz';
+      // V2.3: decide pela origem já gravada (o texto da nota pode ser a transcrição de uma gravação anterior)
+      v.nota_origem = v.nota_origem === 'digitacao' || v.nota_origem === 'misto' || (!v.nota_origem && v.nota_texto?.trim()) ? 'misto' : 'voz';
       this._mudou('visitas', v);
       this.salvar();
       return v;

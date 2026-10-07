@@ -62,7 +62,7 @@ export function renderGestor({ main, store }) {
   const equipe = [{ id: 'v-voce', nome: 'Você', funil: meuFunil(store), comportamento: meuComportamento(store), motivos: meusMotivos(store) }, ...equipeFicticia()];
   const ord = [...equipe].sort((a, b) => (b.funil.total ?? 0) - (a.funil.total ?? 0));
   const n = Math.max(1, Math.round(ord.length / 4));
-  const topo = ord.slice(0, n + 1); // os 2 melhores
+  const topo = ord.slice(0, n); // os 2 melhores (quartil de cima de 6)
   const base = ord.slice(-2); // os 2 piores
   const med = (xs, k) => xs.reduce((s, x) => s + (x.comportamento[k] ?? 0), 0) / xs.length;
   // escala sequencial de um tom (azul) para a taxa de passagem
@@ -103,7 +103,7 @@ export function renderGestor({ main, store }) {
     <p class="dica">1 Planejada · 2 Visitada · 3 Decisor · 4 Cadastro · 5 1ª compra · 6 3ª compra pelo app</p>
 
     <h2>Comportamento</h2>
-    ${razao ? `<p class="insight">Os 2 de cima (${esc(topo.map((x) => x.nome).join(', '))}) convertem <b>${num(razao, 1)}×</b> os 2 de baixo. O que fazem diferente:</p>` : ''}
+    ${razao ? `<p class="insight">Os ${topo.length} de cima (${esc(topo.map((x) => x.nome).join(', '))}) convertem <b>${num(razao, 1)}×</b> os ${base.length} de baixo. O que fazem diferente:</p>` : ''}
     <ul style="padding-left:20px;margin:6px 0">${diffs.map(([k, txt, f]) => `<li><b>${f(med(topo, k))}</b> ${txt} contra <b>${f(med(base, k))}</b></li>`).join('')}</ul>
     <div class="tabela-rolagem"><table class="tabela">
       <thead><tr><th>Vendedor</th><th class="n">Hora média</th><th class="n">Min no ponto</th><th class="n">Retorno na janela</th><th class="n">Nota por voz</th><th class="n">Registro (s)</th><th class="n">Registrou antes de sair</th></tr></thead>
@@ -113,7 +113,7 @@ export function renderGestor({ main, store }) {
 
     <h2>Por que não avançou</h2>
     <p class="sutil">Motivos marcados quando o decisor não cadastrou ou recusou: a etapa de decisor para cadastro.</p>
-    ${execTopo != null && execBase != null ? `<p class="insight">Nos 2 de baixo, <b>${pct(execBase)}</b> das perdas são "sem tempo", "vai pensar" ou "desconfia de app", contra <b>${pct(execTopo)}</b> nos 2 de cima. São motivos que a hora e o jeito da visita mudam.</p>` : ''}
+    ${execTopo != null && execBase != null ? `<p class="insight">Nos ${base.length} de baixo, <b>${pct(execBase)}</b> das perdas são "sem tempo", "vai pensar" ou "desconfia de app", contra <b>${pct(execTopo)}</b> nos ${topo.length} de cima. São motivos que a hora e o jeito da visita mudam.</p>` : ''}
     <div class="tabela-rolagem"><table class="tabela calor">
       <thead><tr><th style="text-align:left">Vendedor</th>${MOTIVOS_NAO_AVANCO.map(([k, r]) => `<th title="${esc(r)}">${esc(MOTIVO_CURTO[k] || r)}</th>`).join('')}<th class="n">Perdas</th></tr></thead>
       <tbody>${ord.map((v) => { const m = v.motivos || {}; const tot = Object.values(m).reduce((s, x) => s + x, 0); return `<tr><td class="nome-v">${esc(v.nome)}</td>${MOTIVOS_NAO_AVANCO.map(([k]) => celMotivo(tot ? (m[k] || 0) / tot : null)).join('')}<td class="n">${tot}</td></tr>`; }).join('')}</tbody>

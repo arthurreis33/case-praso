@@ -4,6 +4,7 @@
 import { esc, toast, quando, seloEstado, dinheiro } from '../ui.js';
 import { nomeDe } from '../store.js';
 import { carregarSeed } from '../seed.js';
+import { DIA_MS } from '../estados.js';
 
 let selecionado = null;
 let busca = '';
@@ -43,7 +44,7 @@ export function renderSim({ main, store, params, render, ir }) {
       <button class="btn" data-acao-sim="avancar-n">Avançar N</button>
     </div>
     <button class="btn" data-acao-sim="zerar" style="margin-top:8px;width:100%"${store.offsetDias ? '' : ' disabled'}>Voltar ao relógio real</button>
-    <p class="dica">Avançar o relógio roda as regras de tempo: 45 dias sem a 3ª compra autônoma → ativação vencida; mais de 120 dias sem comprar → churn.</p>
+    <p class="dica">O +1 dia leva ao começo da jornada de amanhã; os outros mantêm a hora. Avançar o relógio roda as regras de tempo: 45 dias sem a 3ª compra autônoma → ativação vencida; mais de 120 dias sem comprar → churn.</p>
 
     <h2>Evento num ponto</h2>
     <input type="search" id="sim-busca" placeholder="Buscar ponto por nome ou CNPJ" value="${esc(busca)}" aria-label="Buscar ponto">
@@ -95,8 +96,12 @@ export function renderSim({ main, store, params, render, ir }) {
   });
 
   function avancar(n) {
-    const mudaram = store.avancarRelogio(n);
-    toast(`+${n} dias · ${mudaram} ponto${mudaram === 1 ? '' : 's'} mudaram de estado sozinhos`, 3500);
+    // V2.3: o +1 dia leva ao começo da jornada de amanhã, para o retorno marcado hoje aparecer na rota do dia certo
+    const a = store.agora();
+    const [h, m] = (store.vendedor().jornada?.inicio || '08:00').split(':').map(Number);
+    const dias = n === 1 ? (new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1, h, m || 0) - a) / DIA_MS : n;
+    const mudaram = store.avancarRelogio(dias);
+    toast(`+${n} ${n === 1 ? 'dia · começo da jornada' : 'dias'} · ${mudaram} ponto${mudaram === 1 ? '' : 's'} mudaram de estado sozinhos`, 3500);
     render();
   }
 }

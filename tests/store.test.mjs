@@ -192,3 +192,63 @@ test('relógio simulado: agora() anda N dias', async () => {
   s.zerarRelogio();
   assert.equal(s.offsetDias, 0);
 });
+
+// ---------- V2.3 · D: a origem da nota é inferida e o check-out com resultado salva o núcleo ----------
+import { sugerirProximaAcao } from '../public/js/proxima.js';
+import { duracoes } from '../public/js/rules.js';
+
+async function visitaAberta() {
+  const r = relogio(new Date(2026, 9, 6, 14));
+  const s = await novo({ agora: r.agora });
+  const p = s.novoPonto({ nome_fantasia: 'Nota', tipo: 'bar' });
+  return { s, r, p, v: s.checkin(p.id) };
+}
+
+test('V2.3 · nota só por voz grava voz; só digitada grava digitacao', async () => {
+  const a = await visitaAberta();
+  a.s.registrarAudio(a.v.id, { mime: 'audio/webm', dur_s: 12 });
+  assert.equal(a.s.visita(a.v.id).nota_origem, 'voz');
+  // a transcrição entra no texto da nota e uma segunda gravação continua sendo só voz
+  a.s.registrarTranscricao(a.v.id, { status: 'ok', texto: 'dono volta às 15h' });
+  a.s.registrarAudio(a.v.id, { mime: 'audio/webm', dur_s: 8 });
+  assert.equal(a.s.visita(a.v.id).nota_origem, 'voz');
+
+  const b = await visitaAberta();
+  b.s.setCampo(b.v.id, 'nota_texto', 'dono');
+  b.s.setCampo(b.v.id, 'nota_texto', 'dono volta às 15h');
+  assert.equal(b.s.visita(b.v.id).nota_origem, 'digitacao');
+});
+
+test('V2.3 · voz e depois digitação (ou o contrário) grava misto', async () => {
+  const a = await visitaAberta();
+  a.s.registrarAudio(a.v.id, { mime: 'audio/webm', dur_s: 12 });
+  a.s.setCampo(a.v.id, 'nota_texto', 'complemento digitado');
+  assert.equal(a.s.visita(a.v.id).nota_origem, 'misto');
+
+  const b = await visitaAberta();
+  b.s.setCampo(b.v.id, 'nota_texto', 'primeiro digitado');
+  b.s.registrarAudio(b.v.id, { mime: 'audio/webm', dur_s: 5 });
+  assert.equal(b.s.visita(b.v.id).nota_origem, 'misto');
+});
+
+test('V2.3 · "Salvar e fazer check-out": salva o núcleo antes do check-out, com tempo do núcleo e registro no ponto', async () => {
+  const { s, r, p, v } = await visitaAberta();
+  r.passar(300);
+  s.setCampo(v.id, 'nucleo.resultado', 'aberto_sem_decisor');
+  r.passar(6);
+  s.setCampo(v.id, 'nucleo.faixas', ['17-20']);
+  r.passar(4);
+  // o mesmo caminho do botão em views/visita.js: salva o núcleo, confirma a sugestão e faz o check-out
+  const vv = s.visita(v.id);
+  if (vv.nucleo.resultado && !vv.nucleo.fim) s.salvarNucleo(v.id);
+  const sug = sugerirProximaAcao(vv, s.ponto(p.id), { agora: s.agora(), cadastroNaVisita: s.cadastroNaVisita(vv), sit: s.situacao(p.id) });
+  s.confirmarProximaAcao(v.id, { ...sug, sugerida: true });
+  s.checkout(v.id);
+  const fim = s.visita(v.id);
+  assert.equal(duracoes(fim).tempo_nucleo_s, 10);
+  assert.equal(fim.tempos.nucleo_s, 10);
+  assert.equal(duracoes(fim).nucleo_no_ponto, true);
+  assert.ok(fim.nucleo.fim <= fim.checkout.em);
+  assert.equal(s.ponto(p.id).status_dia, 'retornar');
+  assert.equal(new Date(s.ponto(p.id).retorno_sugerido).getHours(), 17, 'volta na janela do decisor');
+});

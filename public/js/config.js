@@ -44,6 +44,10 @@ export const CONFIG = {
     dias_recusa: 21,
     dias_sem_avanco: 7,
     dias_recompra_alerta: 10, // faltam até N dias para os 45 → "recompra vencendo"
+    // V2.3: cliente em ativação é acompanhado por mensagem e fica fora da rota sugerida, salvo quando a mensagem falhou
+    ativacao_visita: {
+      dias_sem_pedido_apos_contato: 2, // PREMISSA (V2.3): visita só depois que a mensagem não gerou pedido
+    },
   },
 
   // Picos por tipo: o dono está ocupado; visita rende menos. Faixas em "HH:MM".
@@ -87,14 +91,14 @@ export const CONFIG = {
       porque: 'já tem fornecedor: volte em 7 dias, na janela dele, com a cesta de entrada',
     },
     preco: {
-      proxima: { tipo: 'retorno', dias: 3 },
+      proxima: { tipo: 'retorno', dias: 3, janela: true },
       argumento: 'Os preços estão no app sem login; compare item por item no balcão.',
-      porque: 'achou caro: volte em 3 dias e compare os preços item por item',
+      porque: 'achou caro: volte em 3 dias e compare os preços item por item, na janela dele',
     },
     quer_prazo: {
-      proxima: { tipo: 'retorno', dias: 3 },
+      proxima: { tipo: 'retorno', dias: 3, janela: true },
       argumento: 'Com CNPJ, pode ter 7 dias para pagar, mediante análise de crédito. Não prometa.',
-      porque: 'quer prazo: volte em 3 dias e explique os 7 dias mediante análise de crédito',
+      porque: 'quer prazo: volte em 3 dias e explique os 7 dias mediante análise de crédito, na janela dele',
     },
     desconfia_app: {
       proxima: { tipo: 'retorno', dias: 3, janela: true },
@@ -107,9 +111,9 @@ export const CONFIG = {
       porque: 'estava sem tempo: volte na próxima janela do decisor',
     },
     vai_pensar: {
-      proxima: { tipo: 'retorno', dias: 2 },
+      proxima: { tipo: 'retorno', dias: 2, janela: true },
       argumento: 'Combine o dia e leve a cesta de entrada pronta.',
-      porque: 'vai pensar: volte em 2 dias com a cesta de entrada pronta',
+      porque: 'vai pensar: volte em 2 dias com a cesta de entrada pronta, na janela dele',
     },
     nao_icp: {
       proxima: { tipo: 'nenhuma' },
@@ -133,10 +137,18 @@ export const CONFIG = {
     max_candidatos: 24, // candidatos levados ao roteirizador (o dia tem no máximo max_paradas)
     espera_max_min: 40, // espera aceitável até a janela abrir
     folga_retorno_min: 30, // retorno com hora: chegar até 30 min depois do combinado
+    intervalo_longo_min: 60, // PREMISSA (V2.3): espera a partir daqui vira "Intervalo" na rota, a hora das mensagens
   },
   // Duração estimada da visita (min) por tipo de visita. Substituída pela média medida (RF11) quando houver ≥ 3 visitas.
   duracao_visita_min: { aquisicao: 20, acompanhamento: 10, reconquista: 15 },
   min_amostras_duracao: 3,
+
+  // ---------- Tela de visita (V2.3) ----------
+  visita: {
+    // liga os blocos da pesquisa de campo do case (RF07 "Pesquisa (opcional)" e RF08 "O que me surpreendeu aqui").
+    // Desligado, a tela termina na nota do vendedor; o modelo de dados e as colunas do export continuam (saem vazias).
+    pesquisa_de_campo: false,
+  },
 
   // ---------- Campo ----------
   limiar_corrigir_pino_m: 150,

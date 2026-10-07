@@ -1,6 +1,7 @@
 // Plano do dia: junta o motor de sugestão (prioridade.js) e o roteirizador (rota.js).
 //  1) pontua todos os pontos da carteira para o dia (pontos esperados + motivo);
 //  2) escolhe os candidatos: retornos com hora (obrigatórios) + os melhores até 15;
+//     V2.3: cliente em ativação não entra como sugestão (vai por mensagem), salvo se a mensagem não gerou pedido;
 //  3) roteiriza com janelas (funcionamento ∩ decisor, almoço, jornada, volta à base);
 //  4) repontua cada parada com a hora prevista de chegada (pico, janela) para o motivo final.
 import { CONFIG, min } from './config.js';
@@ -75,6 +76,7 @@ export function gerarPlano(store, opts = {}, cfg = CONFIG) {
   const fixos = avaliados.filter(({ p }) => adicionados.has(p.id) && !duros.some((d) => d.p.id === p.id));
   const resto = avaliados
     .filter(({ p, a }) => !a.bloqueio && a.esperados > 0.02 && !duros.some((d) => d.p.id === p.id) && !adicionados.has(p.id))
+    .filter(({ a }) => a.sit.estado !== 'ativacao' || a.visitaAposMensagem) // V2.3
     .sort((x, y) => y.a.esperados - x.a.esperados)
     .slice(0, Math.max(0, cfg.rota.max_candidatos - duros.length - fixos.length));
   const candidatos = [...duros, ...fixos, ...resto];

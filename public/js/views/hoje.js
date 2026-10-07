@@ -13,6 +13,7 @@ import { avaliarPrioridade } from '../prioridade.js';
 import { obterPosicao } from '../geo.js';
 import { nomeDe } from '../store.js';
 import { modeloPara, enviarWhatsApp } from '../whatsapp.js';
+import { CONFIG } from '../config.js';
 
 let buscaAdd = '';
 let pendAberta = null; // qual pendência está aberta (uma por vez)
@@ -88,6 +89,13 @@ export function renderHoje({ main, barra, store, render }) {
     .map(([k, x]) => `<button type="button" class="pend ${x.cls}" data-pend="${k}" aria-expanded="${pendAberta === k}">${icone(x.ic)}<span>${esc(x.rotulo)}</span></button>`).join('');
 
   const tituloDia = dataPl.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
+  // V2.3: espera longa vira "Intervalo", a hora de cuidar das mensagens de recompra (o toque abre o chip)
+  const linhaIntervalo = (x) => {
+    const h = Math.max(1, Math.round(x.espera_min / 60));
+    return recompra.length
+      ? `<button type="button" class="intervalo" data-intervalo="recompra">${icone('whatsapp')}<span>Intervalo de ~${h} h · bom momento para as ${recompra.length} ${recompra.length === 1 ? 'mensagem' : 'mensagens'} de recompra</span></button>`
+      : `<p class="intervalo">Intervalo de ~${h} h antes da próxima parada</p>`;
+  };
   const resumo = [`${pl.paradas.length} paradas`, `${String(pl.km).replace('.', ',')} km`, `volta ~${hora(pl.fim_previsto)}`].join(' · ');
 
   main.innerHTML = `
@@ -103,9 +111,10 @@ export function renderHoje({ main, barra, store, render }) {
     ${pl.paradas.map((x) => {
       const p = store.ponto(x.id);
       if (!p) return '';
-      return cardPonto(store, p, {
+      const longa = !feitos.has(p.id) && x.espera_min >= CONFIG.rota.intervalo_longo_min;
+      return (longa ? linhaIntervalo(x) : '') + cardPonto(store, p, {
         ordem: x.ordem, eta: hora(x.chegada), motivo: x.motivo, ultimaVez: true,
-        sub: feitos.has(p.id) ? 'Visitado hoje' : x.espera_min ? `Espera ${x.espera_min} min` : null,
+        sub: feitos.has(p.id) ? 'Visitado hoje' : x.espera_min && !longa ? `Espera ${x.espera_min} min` : null,
         lado: `<button type="button" data-tirar="${esc(p.id)}" aria-label="Tirar ${esc(nomeDe(p))} da rota">${icone('tirar')}<span>Tirar</span></button>`,
       });
     }).join('') || '<div class="vazio-box"><p><b>Nada coube na jornada.</b></p><p class="sutil">Replaneje a partir de onde você está ou mude o deslocamento no Perfil.</p></div>'}
@@ -142,6 +151,12 @@ export function renderHoje({ main, barra, store, render }) {
   const onClick = async (ev) => {
     const pd = ev.target.closest('[data-pend]')?.dataset.pend;
     if (pd) { pendAberta = pendAberta === pd ? null : pd; return render(); }
+    if (ev.target.closest('[data-intervalo]')) {
+      pendAberta = 'recompra';
+      render();
+      document.querySelector('.painel-pend')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
     const t = ev.target.closest('[data-tirar]')?.dataset.tirar;
     if (t) {
       const ant = store.estado.plano_dia;

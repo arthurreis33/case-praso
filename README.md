@@ -1,4 +1,4 @@
-# Campo Praso · V2.1
+# Campo Praso · V2.3
 
 Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outubro de 2026.
 
@@ -9,7 +9,28 @@ Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outub
 - A etapa que esse laço move é a de **visita efetiva para decisor**.
 - O resto da plataforma sustenta esse laço.
 
-[o que o campo mostrou: preencher na quarta]
+## O que a plataforma mostra, pede e devolve
+
+**Mostra**
+- **Hoje:** a rota de 8 a 12 pontos, com a hora prevista e o porquê de cada um, e, fora da rota, os retornos, as recompras vencendo e os pontos para conhecer.
+- **Ficha:** estado, pontos, decisor e janela, "Da última vez", checklist de cadastro, cesta de entrada e histórico.
+- **Carteira:** o funil de 6 etapas, com a passagem onde mais se perde.
+- **Semana:** pontos contra a meta, funil contra o quartil de cima, % de retornos na janela e os motivos da semana.
+
+**Pede**
+- Check-in e check-out, com GPS, hora e tempo no ponto gravados sozinhos.
+- Três toques: o resultado, quem decide e quando essa pessoa está.
+- O motivo, quando a visita não avança.
+- A confirmação da próxima ação, que já vem sugerida.
+- A nota por voz, que é opcional.
+
+**Devolve**
+- O retorno na janela do decisor, já na rota do dia certo.
+- O argumento do motivo na próxima visita ("Da última vez").
+- O pino corrigido pelo check-in.
+- O "Não é ICP" fora da lista.
+- O tempo no ponto, que acerta a hora prevista da rota.
+- O funil e os motivos na Semana.
 
 ## O que o app faz
 
@@ -19,8 +40,7 @@ Protótipo da plataforma de campo do case RevOps da Praso. Arthur Aragão, outub
 4. Mostra a ficha que o Salesforce não tem: estado, pontos, prazo dos 45 dias, decisor, histórico de compras e linha do tempo.
 5. Funciona offline e com uma mão, e mostra o funil do vendedor contra o quartil de cima.
 
-**Link:** `praso-campo-v1.vercel.app` (o mesmo domínio da V1; a V2 migra sozinha os dados do aparelho).
-**Para avaliar com dados de exemplo:** `praso-campo-v1.vercel.app/?demo=1`.
+**Link para avaliar:** `https://case-praso.vercel.app/?demo=1`, que abre com os dados de exemplo.
 
 ## O que mudou na V2.1
 
@@ -36,10 +56,10 @@ A V2.1 é para vendedores da Praso testarem na rua. Por isso, nenhuma tela expli
 
 ## Como rodar
 
-**O link para avaliar é `praso-campo-v1.vercel.app/?demo=1`.** Sem o parâmetro, o app abre vazio, como o vendedor o vê.
+**O link para avaliar é `https://case-praso.vercel.app/?demo=1`.** Sem o parâmetro, o app abre vazio, como o vendedor o vê.
 
 ```bash
-npm test          # 84 testes, sem dependências (node --test)
+npm test          # 101 testes, sem dependências (node --test)
 npm run dev       # serve public/ em http://localhost:5173
 ```
 
@@ -53,25 +73,26 @@ GPS e microfone só funcionam em HTTPS ou em `localhost`. No celular, use o link
 
 Abra o link com `?demo=1`: o app carrega 210 pontos fictícios em Boa Viagem, Pina e Imbiribeira. O **simulador** fica em Perfil → Modo demonstração → Abrir o simulador. Sem `?demo=1`, o app abre como o vendedor vê; para ver os dados de exemplo, toque em "Ver com dados de exemplo" nas boas-vindas.
 
-1. **Hoje:** veja a rota com hora e motivo e, acima dela, os chips do que ficou fora (retornos, recompras vencendo, pontos para conhecer). Toque em "Tirar" num ponto: a rota é recalculada. Depois da jornada, o Hoje mostra o plano de amanhã.
-2. **Visita:**
+1. **O laço, em 1 minuto:** no Hoje, abra um lead da rota, faça o check-in, marque "Aberto sem decisor", deixe marcada só a janela da manhã (9h–11h30) e toque em "Salvar e fazer check-out"; o aviso mostra a volta já na janela. No simulador, toque em **+1 dia**, que leva ao começo da jornada de amanhã: o ponto está na rota de hoje, na hora da janela, com o motivo no card. Na Semana, veja a % de retornos na janela. Repita com "Falou com decisor" e o motivo "Preço" para ver o retorno em 3 dias, na janela, e o "Da última vez" na ficha.
+2. **Hoje:** veja a rota com hora e motivo e, acima dela, os chips do que ficou fora (retornos, recompras vencendo, pontos para conhecer). Os clientes em ativação ficam no chip de recompras, com o WhatsApp, porque a rota só leva o que depende de presença, salvo quando a mensagem não gerou pedido (aí o card diz "mensagem sem pedido há N dias"). Uma espera longa na rota aparece como intervalo, a hora das mensagens. Toque em "Tirar" num ponto: a rota é recalculada. Depois da jornada, o Hoje mostra o plano de amanhã.
+3. **Visita:**
    - Abra um lead e faça o check-in.
    - Marque "Falou com decisor". O decisor e a janela já vêm do ponto, quando conhecidos.
    - Veja a próxima ação sugerida, com o porquê, e confirme com um toque.
-   - Grave uma nota de voz: no modo demonstração, a IA sugere os campos e você confirma com um toque.
-3. **Cadastro detectado:**
+   - Toque em "Salvar e fazer check-out" e grave uma nota de voz: no modo demonstração, a IA sugere os campos e você confirma com um toque.
+4. **Cadastro detectado:**
    - Ainda na visita, toque em "Demonstração: simular cadastro feito" e dispare **Cadastro feito**.
    - Volte à Carteira, no modo Funil. O card está na etapa Cadastro, com o selo "avançou: cadastro detectado".
-4. **Relógio:**
+5. **Relógio:**
    - No simulador, escolha um ponto em ativação, dispare **Pedido assistido** e depois **Pedido autônomo** duas vezes: ele vira Recorrente e soma pontos no Painel.
    - Toque em **+46 dias**: os pontos em ativação sem a 3ª compra autônoma viram "Vencido".
    - Toque em **+30** algumas vezes: quem passa de 120 dias sem comprar vira "Churn".
-5. **Ficha de churn:** histórico de compras, top 5 itens, o que ele parou de comprar e o roteiro de reconquista, que começa pela categoria que mais comprava.
-6. **Mapa:**
+6. **Ficha de churn:** histórico de compras, top 5 itens, o que ele parou de comprar e o roteiro de reconquista, que começa pela categoria que mais comprava.
+7. **Mapa:**
    - Segure um pino para arrastá-lo e confirme.
    - Segure no mapa para criar um ponto ali.
    - Ligue a camada "Desconhecidos".
-7. **Semana:** os pontos da semana contra a meta e o funil contra os melhores do time. Em **Perfil → Visão do gestor**, o que os que convertem o dobro fazem diferente.
+8. **Semana:** os pontos da semana contra a meta e o funil contra os melhores do time. Em **Perfil → Visão do gestor**, o que os que convertem o dobro fazem diferente.
 
 Em produção, cadastro, pedido e pagamento viriam da **integração com o sistema de pedidos**. O simulador existe para mostrar que o card se move sozinho.
 
@@ -118,6 +139,10 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 - *Ganho:* segue o case, que põe a 1ª compra "no app, com apoio". A visita aproveita o momento em que o dono já está com o app aberto.
 - *Custo:* a visita que dá certo fica mais longa. Os multiplicadores (1,8, 1,3 e 0,6) são PREMISSA, sem dado por trás.
 
+**11. Ativação fica fora da rota por padrão (V2.3).** O cliente entre a 1ª e a 3ª compra é acompanhado por mensagem, no chip de recompras do Hoje, e só volta à rota quando a mensagem de WhatsApp não gerou pedido em 2 dias. Um ponto em ativação posto à mão pelo vendedor continua na rota.
+- *Ganho:* a rota gasta presença só onde ela muda a etapa, e a compra continua autônoma, que é a que conta para a meta. Antes, um cliente em ativação de 3 pt sempre vencia um lead de 3 pt em pontos esperados, e a visita era justamente o que podia tornar a 3ª compra assistida.
+- *Custo:* para saber se a mensagem funcionou, a plataforma depende da integração com pedidos e do registro dos contatos. O prazo de 2 dias ainda não foi validado.
+
 **Outras decisões:**
 - **A plataforma só pede o que não sabe.** Decisor e janela já registrados no ponto vêm pré-preenchidos na visita. Nesse caso, o registro costuma ser um toque só (o resultado).
 - **"Ponto fechado" e não "Fechado".** A chave `fechado` da V1 quer dizer *estabelecimento fechado*. Sem a troca de rótulo, a banca leria "Fechado" como venda.
@@ -152,6 +177,8 @@ Em produção, cadastro, pedido e pagamento viriam da **integração com o siste
 | Pedido via WhatsApp conta como autônomo? | Hoje, só a flag decide | integração |
 | Prazo de retorno por motivo de não avanço (V2.2) | De 2 a 7 dias, na janela quando o motivo pede; "Não é ICP" sai da lista | `config.js → motivos` |
 | Chance do cadastrado pela idade do cadastro (V2.2) | ×1,8 até 3 dias, ×1,3 até 10 dias, ×0,6 depois de 30 dias sem compra | `config.js → chance` |
+| Ativação só vai à rota quando a mensagem falha (V2.3) | Contato de WhatsApp há 2 dias ou mais sem pedido depois dele | `config.js → chance.ativacao_visita.dias_sem_pedido_apos_contato` |
+| Espera longa na rota vira intervalo (V2.3) | A partir de 60 min, com o atalho para as mensagens de recompra | `config.js → rota.intervalo_longo_min` |
 
 ## Estrutura
 
@@ -175,9 +202,9 @@ public/                     o app (é o que vai ao ar)
   js/demo.js                modo demonstração (?demo=1, 5 toques na logo, Perfil)
   js/views/                 hoje, mapa, carteira, ficha, visita, novo, painel (Semana e Equipe), perfil, sim, descobrir
 api/transcrever.js          função serverless: transcrição + extração por LLM (chave só no servidor)
-tests/                      node --test: estados, rota, prioridade, store, migração, export, voz
+tests/                      node --test: estados, rota, plano, prioridade, store, migração, export, voz, seed
 scripts/h2_distancias.mjs   H2 em lote a partir do export JSON (V1 ou V2)
-docs/                       PLANO_V2.md, AUDITORIA_V2.md (V2.1), prints/v2.1 (antes e depois) e a proposta Receita + Overture
+docs/                       PLANO_V2.md, PLANO_V2_3.md, AUDITORIA_V2.md (V2.1), prints/v2.1 (antes e depois) e a proposta Receita + Overture
 ```
 
 ## Modelo de dados (schema 2)

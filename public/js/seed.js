@@ -1,16 +1,18 @@
 // Seed FICTÍCIO (seção 7.1). Gera ~210 pontos em Boa Viagem, Pina e Imbiribeira (Recife), espalhados
 // por todos os estados, com pedidos e itens coerentes por tipo, churns com histórico rico,
 // ativações perto dos 45 dias, decisores com e sem janela e pontos sem CNPJ.
+// V2.3: o "Você" é um vendedor mediano cuja maior perda está em visitada → decisor, a etapa da aposta
+// (muitas visitas com o decisor ausente e metade dos retornos fora da janela). Ver docs/PLANO_V2_3.md.
 // Nomes, endereços, CNPJs e coordenadas são INVENTADOS. Os CNPJs têm dígito verificador errado
 // de propósito, para nunca coincidir com uma empresa real. Nenhum dado de pessoa.
 // Determinístico: a mesma semente gera os mesmos dados, relativos ao "hoje" informado.
 import { PRODUTOS, PERFIL_TIPO } from './demo/catalogo.js';
-import { proximaOcorrencia } from './rules.js';
+import { proximaOcorrencia, pontosValor } from './rules.js';
 import { DIA_MS } from './estados.js';
 import { tempos } from './migrar.js';
 import { sugerirProximaAcao } from './proxima.js';
 
-export const SEED_VERSAO = 'seed-v2-2';
+export const SEED_VERSAO = 'seed-v2-3';
 
 export function rng(semente = 42) {
   let a = semente >>> 0;
@@ -63,7 +65,9 @@ const JANELA_TIPO = {
   restaurante: ['14-17', '9-1130'], lanchonete: ['14-17', '9-1130'], padaria: ['9-1130', '14-17'], pizzaria: ['14-17', '17-20'],
   hamburgueria: ['14-17', '17-20'], cafeteria: ['9-1130', '14-17'], bar: ['14-17', '17-20'], outro: ['9-1130', '14-17'],
 };
-const ESTADOS_ALVO = { lead: 75, cadastrado_sem_compra: 30, ativacao: 30, recorrente: 35, ativacao_vencida: 12, churn: 28 };
+// V2.3: o funil conta cadastrado como visitado e decisor; para o "Você" ficar perto de 57% em visitada → decisor
+// com 210 pontos, a carteira tem menos pontos cadastrados e mais leads já visitados.
+const ESTADOS_ALVO = { lead: 120, cadastrado_sem_compra: 19, ativacao: 15, recorrente: 33, ativacao_vencida: 3, churn: 20 };
 
 const iso = (ms) => new Date(ms).toISOString();
 const z = (n) => String(n).padStart(2, '0');
@@ -116,6 +120,7 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
 
   const bairros = Object.entries(BAIRROS).flatMap(([b, cfg]) => Array(cfg.n).fill(b));
   const nAtivPerto = { n: 0 };
+  const ativPerto = []; // V2.3 · B: candidatos à "mensagem sem pedido"
   const nConquistas = { n: 0 };
 
   const novoNome = (tipo, bairro) => {
@@ -227,7 +232,7 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
     }
 
     if (alvo === 'ativacao') {
-      const perto = nAtivPerto.n < 12;
+      const perto = nAtivPerto.n < 6;
       if (perto) nAtivPerto.n++;
       const d = perto ? r.int(35, 44) : r.int(3, 30);
       const ini = horaNoDia(diaDe(H - d * DIA_MS), 9, 18);
@@ -235,7 +240,9 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
       if (r.chance(0.6)) visita(p, Date.parse(p.cadastro_em) - 20 * 60000, { resultado: 'falou_com_decisor' });
       pedido(p, ini, { autonomo: r.chance(0.2) });
       if (r.chance(0.6) && d > 6) pedido(p, ini + r.int(4, Math.max(5, d - 2)) * DIA_MS, { autonomo: r.chance(0.6) });
-      if (r.chance(0.4)) contatos.push({ id: id('ct-'), ponto_id: p.id, ts: iso(H - r.int(1, Math.max(1, d - 1)) * DIA_MS), canal: 'whatsapp', modelo_mensagem: 'lembrete_1a_compra', gerado_pela_plataforma: true, vendedor_id: vendedorId });
+      // V2.3: o lembrete da 1ª compra vem antes do 1º pedido (a mensagem funcionou)
+      if (r.chance(0.4)) contatos.push({ id: id('ct-'), ponto_id: p.id, ts: iso(Math.max(Date.parse(p.cadastro_em) + 3600000, ini - r.int(1, 2) * DIA_MS)), canal: 'whatsapp', modelo_mensagem: 'lembrete_1a_compra', gerado_pela_plataforma: true, vendedor_id: vendedorId });
+      if (perto) ativPerto.push(p);
     }
 
     if (alvo === 'recorrente' && nConquistas.n < 3) {
@@ -288,15 +295,38 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
     pontos.push(p);
   }
 
-  // ---------- visitas de aquisição a leads: dão etapa 2/3 e os retornos com hora ----------
+  // ---------- V2.3 · B: a mensagem de recompra de 3 dias atrás não gerou pedido em duas ativações perto dos 45 dias ----------
+  // (as de 3 pt primeiro, para a exceção aparecer na rota de exemplo)
+  [...ativPerto].sort((a, b) => pontosValor(b) - pontosValor(a)).slice(0, 2).forEach((p) => {
+    contatos.push({ id: id('ct-'), ponto_id: p.id, ts: iso(H - 3 * DIA_MS - r.int(60, 180) * 60000), canal: 'whatsapp', modelo_mensagem: 'recompra', gerado_pela_plataforma: true, vendedor_id: vendedorId });
+  });
+
+  // ---------- visitas de aquisição a leads: dão etapa 1/2/3 e os retornos com hora ----------
+  // V2.3: o "Você" encontra o decisor em pouco mais da metade das visitas e volta na janela em metade das revisitas.
   const leads = pontos.filter((p) => !p.cadastro_em);
-  let k = 0;
   const amanha = inicioHoje + DIA_MS;
-  for (const p of leads.slice(0, 34)) {
+  const INICIO = { '6-9': 6, '9-1130': 9, '1130-14': 11.5, '14-17': 14, '17-20': 17, noite: 20 };
+  // hora fora da janela do decisor e a mais de 1 h do início dela (é o retorno que "não pega" o decisor)
+  const foraDaJanela = (diaMs, faixa) => diaMs + Math.round(((INICIO[faixa] ?? 14) >= 13 ? r.int(9 * 60, 11 * 60) : r.int(15 * 60, 17 * 60)));
+  const GRUPOS = [
+    ['retorno', 12], // decisor ausente com janela → "Retornar" (metade hoje, metade amanhã)
+    ['revisita', 20], // ausente; o retorno foi na janela (encontra o decisor) ou fora dela (não encontra)
+    ['recusou', 12],
+    ['ausente', 33], // decisor ausente, sem retorno marcado
+    ['decisor', 14], // falou com o decisor e não cadastrou, com o motivo
+    ['fechado', 8], // planejado, mas o ponto estava fechado
+    ['planejado', 15], // entrou numa lista do dia e não foi visitado
+  ];
+  const grupoDe = [];
+  for (const [g, n] of GRUPOS) for (let j = 0; j < n; j++) grupoDe.push(g);
+  let k = 0;
+  let nRevisita = 0;
+  for (const p of leads) {
+    const g = grupoDe[k];
+    if (!g) break;
     const dias = r.int(1, 20);
     const ms = horaNoDia(diaDe(H - dias * DIA_MS), 9, 17);
-    if (k < 12) {
-      // decisor ausente com janela → volta para "Retornar" (alguns hoje, outros amanhã)
+    if (g === 'retorno') {
       const faixas = p.decisor?.janela?.faixas?.length ? p.decisor.janela.faixas : [r.pick(['9-1130', '14-17'])];
       if (!p.decisor) p.decisor = { papel: 'dono', janela: { dias: [], faixas }, atualizado_em: iso(ms) };
       const v = visita(p, ms, { resultado: 'aberto_sem_decisor', faixas, dias: [] });
@@ -304,23 +334,34 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
       const quando = proximaOcorrencia(new Date(ref), faixas, []);
       v.proxima_acao = { tipo: 'retorno', data_hora: iso(quando.getTime()), confirmada: true };
       Object.assign(p, { status_dia: 'retornar', retorno_sugerido: iso(quando.getTime()), retorno_motivo: 'janela_decisor' });
-    } else if (k < 22) {
-      // revisita: primeiro o decisor estava ausente; o retorno foi na janela (ou não) e encontrou o decisor
-      const faixas = p.decisor?.janela?.faixas?.length ? p.decisor.janela.faixas : ['14-17'];
+    } else if (g === 'revisita') {
+      const faixas = [p.decisor?.janela?.faixas?.[0] || '14-17'];
+      p.decisor = { papel: p.decisor?.papel || 'dono', janela: { dias: [], faixas }, atualizado_em: iso(ms) };
       const ant = horaNoDia(diaDe(ms - r.int(2, 6) * DIA_MS), 9, 12);
       visita(p, ant, { resultado: 'aberto_sem_decisor', faixas, dias: [] });
       const previsto = proximaOcorrencia(new Date(ant + 3600000), faixas, []);
-      const naJanela = r.chance(0.7);
-      const ms2 = naJanela ? previsto.getTime() + r.int(0, 50) * 60000 : diaDe(previsto.getTime()) + r.int(8, 11) * 3600000;
-      const v = visita(p, ms2, { resultado: naJanela ? 'falou_com_decisor' : r.pick(['aberto_sem_decisor', 'falou_com_decisor']), motivo: r.pick(['vai_pensar', 'quer_prazo', 'tem_fornecedor', 'desconfia_app']) });
+      const naJanela = nRevisita++ % 2 === 0; // metade na janela
+      const ms2 = naJanela ? previsto.getTime() + r.int(0, 50) * 60000 : foraDaJanela(diaDe(previsto.getTime()), faixas[0]);
+      const v = visita(p, ms2, naJanela
+        ? { resultado: 'falou_com_decisor', motivo: r.pick(['vai_pensar', 'quer_prazo', 'tem_fornecedor', 'desconfia_app']) }
+        : { resultado: 'aberto_sem_decisor', faixas, dias: [] });
       v.retorno_previsto = { quando: previsto.toISOString(), motivo: 'janela_decisor' };
       p.status_dia = 'visitado';
-    } else if (k < 29) {
+    } else if (g === 'recusou') {
       visita(p, horaNoDia(diaDe(H - r.int(2, 15) * DIA_MS), 9, 17), { resultado: 'recusou', motivo: r.pick(['tem_fornecedor', 'preco', 'nao_icp']) });
       p.status_dia = 'visitado';
-    } else {
+    } else if (g === 'ausente') {
+      visita(p, ms, { resultado: 'aberto_sem_decisor', faixas: p.decisor?.janela?.faixas || [], dias: [] });
+      p.status_dia = 'visitado';
+    } else if (g === 'decisor') {
+      visita(p, ms, { resultado: 'falou_com_decisor', motivo: r.pick(['tem_fornecedor', 'preco', 'vai_pensar', 'quer_prazo', 'desconfia_app', 'sem_tempo']) });
+      p.status_dia = 'visitado';
+    } else if (g === 'fechado') {
+      p.planejado_em = iso(diaDe(ms) + 7 * 3600000);
       visita(p, ms, { resultado: 'fechado' });
       p.status_dia = 'visitado';
+    } else {
+      p.planejado_em = iso(diaDe(H - r.int(1, 10) * DIA_MS) + 7 * 3600000);
     }
     k++;
   }
@@ -351,7 +392,7 @@ export function gerarSeed({ hoje = new Date(), semente = 20261005, vendedorId = 
   // Leads que falaram com o decisor e não cadastraram, com o motivo marcado. A próxima ação vem de
   // CONFIG.motivos, como no app: metade volta hoje e metade amanhã, com "Da última vez" no card.
   // Fica no fim para não mexer no resto do seed.
-  const semVisita = pontos.filter((p) => !p.cadastro_em && !visitas.some((v) => v.ponto_id === p.id));
+  const semVisita = pontos.filter((p) => !p.cadastro_em && !p.planejado_em && !visitas.some((v) => v.ponto_id === p.id));
   const CASOS_MOTIVO = [['vai_pensar', 2, 0], ['preco', 3, 0], ['sem_tempo', 1, 0], ['desconfia_app', 3, 1], ['quer_prazo', 3, 1], ['tem_fornecedor', 7, 1]];
   CASOS_MOTIVO.forEach(([motivo, dias, depois], i) => {
     const p = semVisita[i];

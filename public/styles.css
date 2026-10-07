@@ -276,6 +276,14 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, .chip:focus-v
 .painel-pend.alerta { background: var(--alerta-fundo); }
 .painel-pend.info { background: var(--praso-fundo); }
 .titulo-rota { margin-top: 18px; }
+/* V2.3 · espera longa na rota: linha de intervalo entre os cards */
+.intervalo {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; margin: 6px 0; padding: 8px 12px;
+  border: 1.5px dashed var(--linha-forte); border-radius: var(--raio); background: transparent;
+  font: inherit; font-size: .9rem; font-weight: 600; color: var(--sutil); text-align: left;
+}
+button.intervalo { cursor: pointer; color: var(--texto); border-color: var(--zap); }
+button.intervalo .ic { width: 18px; height: 18px; flex: 0 0 auto; color: var(--zap); }
 .boas-vindas { padding: 12px 0; }
 .boas-vindas h1 { font-size: 1.5rem; margin-bottom: 8px; }
 .vazio-box { border: 1.5px dashed var(--linha-forte); border-radius: var(--raio); padding: 20px 16px; margin: 16px 0; text-align: center; }
